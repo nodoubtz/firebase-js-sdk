@@ -14,7 +14,7 @@
 
 name: Test All Packages
 
-on: pull_request
+on: push
 
 env:
   # make chromedriver detect installed Chrome version and download the corresponding driver
@@ -50,6 +50,10 @@ jobs:
         yarn
     - name: yarn build
       run: yarn build
+    - name: Remove git directory
+      run: rm -rf .git
+    - name: Verify .git is gone
+      run: echo $(ls -a)
     - name: Archive build
       if: ${{ !cancelled() }}
       run: |
