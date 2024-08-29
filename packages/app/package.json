@@ -27,7 +27,6 @@
     "build:deps": "lerna run --scope @firebase/app --include-dependencies build",
     "dev": "rollup -c -w",
     "test": "run-p --npm-path npm lint test:all",
-    "test:ci": "node ../../scripts/run_tests_in_ci.js -s test:all",
     "test:all": "run-p --npm-path npm test:browser test:node",
     "test:browser": "karma start",
     "test:node": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --reporter lcovonly -- mocha src/**/*.test.ts --config ../../config/mocharc.node.js",

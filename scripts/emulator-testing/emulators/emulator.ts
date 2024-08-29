@@ -25,7 +25,6 @@ import { ChildProcess } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import fetch from 'node-fetch';
 // @ts-ignore
 import * as tmp from 'tmp';
 
@@ -61,6 +60,14 @@ export abstract class Emulator {
         console.log(`Created temporary directory at [${dir}].`);
         const filepath: string = path.resolve(dir, this.binaryName);
         const writeStream: fs.WriteStream = fs.createWriteStream(filepath);
+
+        fetch(this.binaryUrl).then((response) => {
+          response.body?.pipeThrough(new TransformStream({ 
+            transform(chunk: Uint8Array) {
+              writeStream.write(chunk);
+            }})
+          );
+        })
 
         console.log(`Downloading emulator from [${this.binaryUrl}] ...`);
         fetch(this.binaryUrl).then(resp => {

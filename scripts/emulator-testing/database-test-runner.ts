@@ -17,34 +17,29 @@
 
 import { spawn } from 'child-process-promise';
 import * as path from 'path';
-
 import { DatabaseEmulator } from './emulators/database-emulator';
 
-function runTest(port: number, namespace: string) {
+// Example: karma start
+const command = process.argv.slice(2);
+
+(async () => {
+  const emulator = new DatabaseEmulator();
+  await emulator.download();
+  await emulator.setUp();
+  await emulator.setPublicRules();
+
   const options = {
+    shell: true,
     cwd: path.resolve(__dirname, '../../packages/database'),
     env: Object.assign({}, process.env, {
-      RTDB_EMULATOR_PORT: port,
-      RTDB_EMULATOR_NAMESPACE: namespace
+      RTDB_EMULATOR_PORT: emulator.port,
+      RTDB_EMULATOR_NAMESPACE: emulator.namespace
     }),
     stdio: 'inherit' as const
   };
-  return spawn('yarn', ['test:all'], options);
-}
 
-async function run(): Promise<void> {
-  const emulator = new DatabaseEmulator();
-  try {
-    await emulator.download();
-    await emulator.setUp();
-    await emulator.setPublicRules();
-    await runTest(emulator.port, emulator.namespace);
-  } finally {
-    await emulator.tearDown();
-  }
-}
-
-run().catch(err => {
-  console.error(err);
-  process.exitCode = 1;
-});
+  spawn('npx', command, options)
+    .finally(() => {
+      emulator.tearDown();
+    });
+})();

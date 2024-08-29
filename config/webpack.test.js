@@ -34,6 +34,7 @@ module.exports = {
     splitChunks: false,
     minimize: false
   },
+  stats: 'errors-only',
   module: {
     rules: [
       {
@@ -119,5 +120,5 @@ module.exports = {
       'RTDB_EMULATOR_PORT': false,
       'RTDB_EMULATOR_NAMESPACE': false
     })
-  ]
+  ],
 };

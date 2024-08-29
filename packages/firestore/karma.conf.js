@@ -72,7 +72,7 @@ function getTestFiles(argv) {
     process.env.TEST_PLATFORM = 'browser_lite';
     return [liteIntegrationTests];
   } else {
-    return [unitTests, legacyIntegrationTests];
+    return [unitTests, legacyIntegrationTests, liteIntegrationTests];
   }
 }
 

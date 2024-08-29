@@ -26,7 +26,10 @@ const config = {
   require: 'ts-node/register',
   timeout: 5000,
   retries: 5,
-  exit: true
+  exit: true,
+  // When running in CI, only output details for failures
+  // List of available reporters: https://mochajs.org/#reporters
+  reporter: process.env?.CI ? 'min' : 'spec'
 };
 
 // Firestore uses babel to compile tests in Nodejs
