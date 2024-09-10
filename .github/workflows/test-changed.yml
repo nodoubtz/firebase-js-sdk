@@ -14,7 +14,7 @@
 
 name: Test Modified Packages
 
-on: pull_request
+on: push
 
 env:
   # Bump Node memory limit
@@ -82,7 +82,7 @@ jobs:
           
   test-webkit:
     name: Test Packages With Changed Files in Webkit
-    runs-on: ubuntu-20.04
+    runs-on: macos-latest
 
     steps:
       - name: Checkout Repo
@@ -97,10 +97,10 @@ jobs:
         run: |
           cp config/ci.config.json config/project.json
           yarn
-          npx playwright install webkit
+          # npx playwright install webkit
       - name: build
         run: yarn build:changed core
       - name: Run tests on changed packages
         run: yarn test:changed core
         env:
-          BROWSERS: 'WebkitHeadless'
+          BROWSERS: 'ChromeHeadless' # let's see if it's a macos problem, or a webkitheadless problem.
