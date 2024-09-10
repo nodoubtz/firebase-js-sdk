@@ -46,7 +46,7 @@ export const testConfig: {
 } = {
   'core': {
     'ignorePackages': [
-      ...ignoredWebkitCoreTests,
+      // ...ignoredWebkitCoreTests,
       '@firebase/firestore',
       '@firebase/firestore-compat',
       'firebase-firestore-integration-test',
