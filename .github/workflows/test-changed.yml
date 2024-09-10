@@ -82,7 +82,7 @@ jobs:
           
   test-webkit:
     name: Test Packages With Changed Files in Webkit
-    runs-on: macos-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - name: Checkout Repo
