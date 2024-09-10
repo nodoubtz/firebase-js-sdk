@@ -21,7 +21,7 @@ const webpackTestConfig = require('./webpack.test');
 const { argv } = require('yargs');
 
 function determineBrowsers() {
-  const supportedBrowsers = ['ChromeHeadless', 'WebkitHeadless', 'Firefox'];
+  const supportedBrowsers = ['ChromeHeadless', 'Webkit', 'Firefox'];
 
   if (process.env.BROWSERS) {
     const browsers = process.env.BROWSERS.split(',');
