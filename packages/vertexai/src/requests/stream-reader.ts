@@ -81,7 +81,7 @@ async function* generateResponseSequence(
  * chunks, returning a new stream that provides a single complete
  * GenerateContentResponse in each iteration.
  */
-export function getResponseStream<T>(
+export function getResponseStream<T extends GenerateContentResponse>(
   inputStream: ReadableStream<string>
 ): ReadableStream<T> {
   const reader = inputStream.getReader();
@@ -110,7 +110,15 @@ export function getResponseStream<T>(
           let parsedResponse: T;
           while (match) {
             try {
+              // TODO: Validate that the parsed object satisfies the type constraints of T, since
+              // JSON.parse() returns `any`.
               parsedResponse = JSON.parse(match[1]);
+              // The Vertex AI backend omits default values.
+              // This causes the `index` property to be omitted from the first candidate in the
+              // response, since it has index 0, and 0 is a default value.
+              if (parsedResponse.candidates && !parsedResponse.candidates[0].index) {
+                parsedResponse.candidates[0].index = 0;
+              }
             } catch (e) {
               controller.error(
                 new VertexAIError(
