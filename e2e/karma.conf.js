@@ -82,7 +82,7 @@ module.exports = function (config) {
         'resolveJsonModule': true,
         'esModuleInterop': true,
         'sourceMap': true,
-        'target': 'es2017',
+        'target': 'es5',
         'importHelpers': true,
         'noEmitOnError': true
       }
