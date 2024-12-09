@@ -45,7 +45,7 @@ export class RequestUrl {
     // TODO: allow user-set option if that feature becomes available
     const apiVersion = DEFAULT_API_VERSION;
     const baseUrl = this.requestOptions?.baseUrl || DEFAULT_BASE_URL;
-    let url = `${baseUrl}/${apiVersion}`;
+    let url = `https://${this.apiSettings.location}-${baseUrl}/${apiVersion}`;
     url += `/projects/${this.apiSettings.project}`;
     url += `/locations/${this.apiSettings.location}`;
     url += `/${this.model}`;
@@ -95,11 +95,11 @@ export async function getHeaders(url: RequestUrl): Promise<Headers> {
     }
   }
 
-  if (url.apiSettings.getAuthToken) {
-    const authToken = await url.apiSettings.getAuthToken();
-    if (authToken) {
-      headers.append('Authorization', `Firebase ${authToken.accessToken}`);
-    }
+  const GCLOUD_ACCESS_TOKEN = process.env.GCLOUD_ACCESS_TOKEN;
+  if (GCLOUD_ACCESS_TOKEN) {
+    headers.append('Authorization', `Bearer ${GCLOUD_ACCESS_TOKEN}`);
+  } else {
+    throw Error("Environment variable GCLOUD_ACCESS_TOKEN is undefined.");
   }
 
   return headers;
