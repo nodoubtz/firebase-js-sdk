@@ -336,6 +336,8 @@ export class GenerativeModel extends VertexAIModel {
     safetySettings: SafetySetting[];
     startChat(startChatParams?: StartChatParams): ChatSession;
     // (undocumented)
+    startLiveSession(config?: LiveGenerationConfig): Promise<LiveSession>;
+    // (undocumented)
     systemInstruction?: Content;
     // (undocumented)
     toolConfig?: ToolConfig;
@@ -532,6 +534,78 @@ export class IntegerSchema extends Schema {
     constructor(schemaParams?: SchemaParams);
 }
 
+// @public (undocumented)
+export interface LiveClientContent {
+    // (undocumented)
+    client_content: {
+        turns: {
+            role: string;
+            parts: Part[];
+        }[];
+        turn_complete: boolean;
+    };
+}
+
+// @public (undocumented)
+export interface LiveClientRealtimeInput {
+    // (undocumented)
+    realtime_input: {
+        media_chunks: {
+            mime_type: string;
+            data: string;
+        }[];
+    };
+}
+
+// @public (undocumented)
+export interface LiveClientSetup {
+    // (undocumented)
+    setup: {
+        model: string;
+        generation_config?: LiveGenerationConfig;
+    };
+}
+
+// @public (undocumented)
+export interface LiveGenerationConfig {
+    // (undocumented)
+    response_modalities?: ResponseModalities[];
+    // (undocumented)
+    speech_config?: {
+        voice_config?: {
+            prebuilt_voice_config?: {
+                voice_name?: string;
+            };
+        };
+    };
+}
+
+// @public (undocumented)
+export interface LiveServerContent {
+    // (undocumented)
+    serverContent: {
+        modelTurn?: {
+            parts: Part[];
+        };
+        turnComplete?: boolean;
+    };
+}
+
+// @public (undocumented)
+export class LiveSession {
+    constructor(socket: WebSocket);
+    // (undocumented)
+    close(): void;
+    // (undocumented)
+    onMessage(callback: (content: LiveServerContent) => void): void;
+    // (undocumented)
+    sendAudio(data: string, turnComplete: boolean): void;
+    // (undocumented)
+    sendRealtimeAudio(realtime_input: LiveClientRealtimeInput): void;
+    // (undocumented)
+    sendText(data: string, turnComplete: boolean): void;
+    }
+
 // @public
 export interface ModelParams extends BaseParams {
     // (undocumented)
@@ -592,6 +666,16 @@ export interface PromptFeedback {
 export interface RequestOptions {
     baseUrl?: string;
     timeout?: number;
+}
+
+// @public (undocumented)
+export enum ResponseModalities {
+    // (undocumented)
+    AUDIO = "AUDIO",
+    // (undocumented)
+    IMAGE = "IMAGE\"",
+    // (undocumented)
+    TEXT = "TEXT"
 }
 
 // @public (undocumented)

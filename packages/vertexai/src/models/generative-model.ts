@@ -43,6 +43,7 @@ import {
 } from '../requests/request-helpers';
 import { VertexAI } from '../public-types';
 import { VertexAIModel } from './vertexai-model';
+import { LiveClientContent, LiveClientRealtimeInput, LiveClientSetup, LiveGenerationConfig, LiveServerContent } from '../types/live';
 
 /**
  * Class for generative model APIs.
@@ -138,6 +139,55 @@ export class GenerativeModel extends VertexAIModel {
     );
   }
 
+  async startLiveSession(config?: LiveGenerationConfig): Promise<LiveSession> {
+    const _bidiGoogleAI = false;
+    const _baseDailyUrl = 'daily-firebaseml.sandbox.googleapis.com';
+    const _apiUrl =
+        'ws/google.firebase.machinelearning.v2beta.LlmBidiService/BidiGenerateContent?key=';
+    const _baseGAIUrl = 'generativelanguage.googleapis.com';
+    const _apiGAIUrl = 'ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=';
+    const model = 'gemini-2.0-flash-exp'
+
+    let url;
+    let modelString = '';
+    if (_bidiGoogleAI) {
+      const gaiApiKey = '';
+      url = `wss://${_baseGAIUrl}/${_apiGAIUrl}${gaiApiKey}`;
+      modelString = `models/${model}`;
+    } else {
+      url = `wss://${_baseDailyUrl}/${_apiUrl}${this._apiSettings.apiKey}`;
+      modelString =
+          `projects/${this._apiSettings.project}/locations/${this._apiSettings.location}/publishers/google/models/${model}`;
+    }
+
+    const socket = new WebSocket(url)
+
+    socket.onopen = () => {
+      const liveClientSetup: LiveClientSetup = {
+        setup: {
+          model: modelString,
+          generation_config: config
+        }
+      }
+      socket.send(JSON.stringify(liveClientSetup));
+    }
+
+    const setupComplete = new Promise((resolve, reject) => {
+      socket.onmessage = async (event) => {
+        console.log('received message in `startLiveSession`')
+        const msg = JSON.parse(await (event.data as Blob).text());
+        if (msg.setupComplete) {
+          resolve('setup complete.');
+        } else {
+          reject('first message did not contain `setup_complete`');
+        }
+      };
+    });
+
+    await setupComplete;
+    return new LiveSession(socket);
+  }
+
   /**
    * Counts the tokens in the provided request.
    */
@@ -146,5 +196,86 @@ export class GenerativeModel extends VertexAIModel {
   ): Promise<CountTokensResponse> {
     const formattedParams = formatGenerateContentInput(request);
     return countTokens(this._apiSettings, this.model, formattedParams);
+  }
+}
+
+export class LiveSession {
+  constructor(private socket: WebSocket) { 
+    console.log('started new LiveSession');
+    this.socket.onclose = (event) => {
+      console.log('websocket closed', event);
+    }
+
+    this.socket.onerror = (event) => {
+      console.log('websocket error:', event)
+    }
+  }
+
+  sendText(data: string, turnComplete: boolean) {
+    if(!this.socket.OPEN) {
+      throw new Error("Cannot send message. Live connection was closed.")
+    }
+    const msg: LiveClientContent = {
+      client_content: {
+        turns: [{
+          role: 'user',
+          parts: [{
+            text: data
+          }]
+        }],
+        turn_complete: turnComplete
+      },
+    }
+    this.socket.send(JSON.stringify(msg));
+  }
+
+  sendAudio(data: string, turnComplete: boolean) {
+    if(!this.socket.OPEN) {
+      throw new Error("Cannot send message. Live connection was closed.")
+    }
+    const msg: LiveClientContent = {
+      client_content: {
+        turns: [{
+          role: 'user',
+          parts: [
+            {
+              inlineData: {
+                mimeType: 'audio/pcm',
+                data,
+              }
+            }
+        ]
+        }],
+        turn_complete: turnComplete
+      },
+    }
+    this.socket.send(JSON.stringify(msg));
+  }
+
+  sendRealtimeAudio(realtime_input: LiveClientRealtimeInput) {
+    if (!this.socket.OPEN) {
+      throw new Error("Cannot send message. Live Connection was closed");
+    }
+
+    this.socket.send(JSON.stringify(realtime_input));
+  }
+
+  // Assumes the setup_complete message was already received
+  onMessage(callback: (content: LiveServerContent) => void) {
+    console.log("setting onMessage callback");
+    this.socket.onmessage = async (event) => {
+      console.log("triggering onMessage callback");
+      const content: LiveServerContent = JSON.parse(await (event.data as Blob).text())
+      callback(content);
+    }
+  }
+
+  close() {
+    if (!this.socket.OPEN) { 
+      throw new Error("Socket is not in a state that can be closed. Aborting close.")
+    }
+
+    console.log('closing web socket');
+    this.socket.close();
   }
 }
