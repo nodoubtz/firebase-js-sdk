@@ -39,8 +39,8 @@ export declare class ImagenModel extends VertexAIModel
 
 |  Method | Modifiers | Description |
 |  --- | --- | --- |
-|  [generateImages(prompt)](./vertexai.imagenmodel.md#imagenmodelgenerateimages) |  | Generates images using the Imagen model and returns them as base64-encoded strings. |
-|  [generateImagesGCS(prompt, gcsURI)](./vertexai.imagenmodel.md#imagenmodelgenerateimagesgcs) |  | Generates images to Google Cloud Storage (GCS) using the Imagen model. |
+|  [generateImages(prompt)](./vertexai.imagenmodel.md#imagenmodelgenerateimages) |  | <b><i>(BETA)</i></b> Generates images using the Imagen model and returns them as base64-encoded strings.<!-- -->This feature is in public preview and is not intended for production use. The API is subject to change. |
+|  [generateImagesGCS(prompt, gcsURI)](./vertexai.imagenmodel.md#imagenmodelgenerateimagesgcs) |  | <b><i>(BETA)</i></b> Generates images to Google Cloud Storage (GCS) using the Imagen model.<!-- -->This feature is in public preview and is not intended for production use. The API is subject to change. |
 
 ## ImagenModel.(constructor)
 
@@ -71,7 +71,7 @@ The Imagen Generation Configuration.
 <b>Signature:</b>
 
 ```typescript
-readonly generationConfig?: ImagenGenerationConfig;
+generationConfig?: ImagenGenerationConfig;
 ```
 
 ## ImagenModel.requestOptions
@@ -79,7 +79,7 @@ readonly generationConfig?: ImagenGenerationConfig;
 <b>Signature:</b>
 
 ```typescript
-readonly requestOptions?: RequestOptions | undefined;
+requestOptions?: RequestOptions | undefined;
 ```
 
 ## ImagenModel.safetySettings
@@ -89,12 +89,17 @@ Safety settings for filtering inappropriate content.
 <b>Signature:</b>
 
 ```typescript
-readonly safetySettings?: ImagenSafetySettings;
+safetySettings?: ImagenSafetySettings;
 ```
 
 ## ImagenModel.generateImages()
 
+> This API is provided as a preview for developers and may change based on feedback that we receive. Do not use this API in a production environment.
+> 
+
 Generates images using the Imagen model and returns them as base64-encoded strings.
+
+This feature is in public preview and is not intended for production use. The API is subject to change.
 
 If the prompt was not blocked, but one or more of the generated images were filtered, the returned object will have a `filteredReason` property. If all images are filtered, the `images` array will be empty.
 
@@ -122,7 +127,12 @@ If the request to generate images fails. This happens if the prompt is blocked.
 
 ## ImagenModel.generateImagesGCS()
 
+> This API is provided as a preview for developers and may change based on feedback that we receive. Do not use this API in a production environment.
+> 
+
 Generates images to Google Cloud Storage (GCS) using the Imagen model.
+
+This feature is in public preview and is not intended for production use. The API is subject to change.
 
 If the prompt was not blocked, but one or more of the generated images were filtered, the returned object will have a `filteredReason` property. If all images are filtered, the `images` array will be empty.
 
