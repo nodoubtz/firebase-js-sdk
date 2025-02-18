@@ -118,7 +118,11 @@ export enum HarmSeverity {
   /**
    * High level of harm severity.
    */
-  HARM_SEVERITY_HIGH = 'HARM_SEVERITY_HIGH'
+  HARM_SEVERITY_HIGH = 'HARM_SEVERITY_HIGH',
+  /**
+   * Unspecified level of harm severity.
+   */
+  HARM_SEVERITY_UNSPECIFIED = 'HARM_SEVERITY_UNSPECIFIED'
 }
 
 /**

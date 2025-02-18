@@ -16,7 +16,7 @@
  */
 
 import { FirebaseApp, _FirebaseService } from '@firebase/app';
-import { VertexAI, VertexAIOptions } from './public-types';
+import { Backend, VertexAI, VertexAIOptions } from './public-types';
 import {
   AppCheckInternalComponentName,
   FirebaseAppCheckInternal
@@ -37,6 +37,7 @@ export class VertexAIService implements VertexAI, _FirebaseService {
     public app: FirebaseApp,
     authProvider?: Provider<FirebaseAuthInternalName>,
     appCheckProvider?: Provider<AppCheckInternalComponentName>,
+    public backend = Backend.GEMINI_DEVELOPER_API,
     public options?: VertexAIOptions
   ) {
     const appCheck = appCheckProvider?.getImmediate({ optional: true });

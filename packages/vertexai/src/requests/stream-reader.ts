@@ -25,6 +25,9 @@ import {
 } from '../types';
 import { VertexAIError } from '../errors';
 import { createEnhancedContentResponse } from './response-helpers';
+import * as DeveloperAPIMapper from '../developerAPI';
+import { DeveloperAPIGenerateContentResponse } from '../types/developerAPI';
+import { ApiSettings } from '../types/internal';
 
 const responseLineRE = /^data\: (.*)(?:\n\n|\r\r|\r\n\r\n)/;
 
@@ -36,7 +39,10 @@ const responseLineRE = /^data\: (.*)(?:\n\n|\r\r|\r\n\r\n)/;
  *
  * @param response - Response from a fetch call
  */
-export function processStream(response: Response): GenerateContentStreamResult {
+export function processStream(
+  response: Response,
+  apiSettings: ApiSettings
+): GenerateContentStreamResult {
   const inputStream = response.body!.pipeThrough(
     new TextDecoderStream('utf8', { fatal: true })
   );
@@ -44,23 +50,27 @@ export function processStream(response: Response): GenerateContentStreamResult {
     getResponseStream<GenerateContentResponse>(inputStream);
   const [stream1, stream2] = responseStream.tee();
   return {
-    stream: generateResponseSequence(stream1),
-    response: getResponsePromise(stream2)
+    stream: generateResponseSequence(stream1, apiSettings),
+    response: getResponsePromise(stream2, apiSettings)
   };
 }
 
 async function getResponsePromise(
-  stream: ReadableStream<GenerateContentResponse>
+  stream: ReadableStream<GenerateContentResponse>,
+  apiSettings: ApiSettings
 ): Promise<EnhancedGenerateContentResponse> {
   const allResponses: GenerateContentResponse[] = [];
   const reader = stream.getReader();
   while (true) {
     const { done, value } = await reader.read();
     if (done) {
-      const enhancedResponse = createEnhancedContentResponse(
-        aggregateResponses(allResponses)
-      );
-      return enhancedResponse;
+      let generateContentResponse = aggregateResponses(allResponses);
+      if (apiSettings.developerAPIEnabled) {
+        generateContentResponse = DeveloperAPIMapper.mapGenerateContentResponse(
+          generateContentResponse as DeveloperAPIGenerateContentResponse
+        );
+      }
+      return createEnhancedContentResponse(generateContentResponse);
     }
 
     allResponses.push(value);
@@ -68,7 +78,8 @@ async function getResponsePromise(
 }
 
 async function* generateResponseSequence(
-  stream: ReadableStream<GenerateContentResponse>
+  stream: ReadableStream<GenerateContentResponse>,
+  apiSettings: ApiSettings
 ): AsyncGenerator<EnhancedGenerateContentResponse> {
   const reader = stream.getReader();
   while (true) {
@@ -77,7 +88,13 @@ async function* generateResponseSequence(
       break;
     }
 
-    const enhancedResponse = createEnhancedContentResponse(value);
+    const enhancedResponse = apiSettings.developerAPIEnabled
+      ? createEnhancedContentResponse(
+          DeveloperAPIMapper.mapGenerateContentResponse(
+            value as DeveloperAPIGenerateContentResponse
+          )
+        )
+      : createEnhancedContentResponse(value);
     yield enhancedResponse;
   }
 }

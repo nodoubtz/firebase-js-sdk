@@ -28,7 +28,8 @@ export interface VertexAI {
    * The {@link @firebase/app#FirebaseApp} this <code>{@link VertexAI}</code> instance is associated with.
    */
   app: FirebaseApp;
-  location: string;
+  backend: Backend;
+  location: string; // This is only applicable if we're using the VertexAI API.
 }
 
 /**
@@ -38,3 +39,21 @@ export interface VertexAI {
 export interface VertexAIOptions {
   location?: string;
 }
+
+export interface InstanceIdentifier {
+  backend: Backend;
+  location?: string; // Only defined when using Vertex AI
+}
+
+/**
+ * Exists in the value space.
+ */
+export const Backend = {
+  VERTEX_AI: 'VERTEX_AI',
+  GEMINI_DEVELOPER_API: 'GEMINI_DEVELOPER_API'
+}
+
+/**
+ * Exists in the type space.
+ */
+export type Backend = typeof Backend[keyof typeof Backend];

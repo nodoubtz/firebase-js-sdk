@@ -18,6 +18,15 @@ export class ArraySchema extends Schema {
     toJSON(): SchemaRequest;
 }
 
+// @public (undocumented)
+export const Backend: {
+    VERTEX_AI: string;
+    GEMINI_DEVELOPER_API: string;
+};
+
+// @public (undocumented)
+export type Backend = typeof Backend[keyof typeof Backend];
+
 // @public
 export interface BaseParams {
     // (undocumented)
@@ -344,6 +353,9 @@ export class GenerativeModel extends VertexAIModel {
 }
 
 // @public
+export function getDeveloperAPI(app?: FirebaseApp): VertexAI;
+
+// @public
 export function getGenerativeModel(vertexAI: VertexAI, modelParams: ModelParams, requestOptions?: RequestOptions): GenerativeModel;
 
 // @beta
@@ -413,7 +425,8 @@ export enum HarmSeverity {
     HARM_SEVERITY_HIGH = "HARM_SEVERITY_HIGH",
     HARM_SEVERITY_LOW = "HARM_SEVERITY_LOW",
     HARM_SEVERITY_MEDIUM = "HARM_SEVERITY_MEDIUM",
-    HARM_SEVERITY_NEGLIGIBLE = "HARM_SEVERITY_NEGLIGIBLE"
+    HARM_SEVERITY_NEGLIGIBLE = "HARM_SEVERITY_NEGLIGIBLE",
+    HARM_SEVERITY_UNSPECIFIED = "HARM_SEVERITY_UNSPECIFIED"
 }
 
 // @beta
@@ -511,6 +524,14 @@ export interface InlineDataPart {
     // (undocumented)
     text?: never;
     videoMetadata?: VideoMetadata;
+}
+
+// @public (undocumented)
+export interface InstanceIdentifier {
+    // (undocumented)
+    backend: Backend;
+    // (undocumented)
+    location?: string;
 }
 
 // @public
@@ -627,7 +648,6 @@ export interface SafetyRating {
 export interface SafetySetting {
     // (undocumented)
     category: HarmCategory;
-    // (undocumented)
     method?: HarmBlockMethod;
     // (undocumented)
     threshold: HarmBlockThreshold;
@@ -782,6 +802,8 @@ export interface UsageMetadata {
 export interface VertexAI {
     app: FirebaseApp;
     // (undocumented)
+    backend: Backend;
+    // (undocumented)
     location: string;
 }
 
@@ -806,7 +828,8 @@ export const enum VertexAIErrorCode {
     NO_PROJECT_ID = "no-project-id",
     PARSE_FAILED = "parse-failed",
     REQUEST_ERROR = "request-error",
-    RESPONSE_ERROR = "response-error"
+    RESPONSE_ERROR = "response-error",
+    UNSUPPORTED = "unsupported"
 }
 
 // @public
@@ -816,8 +839,9 @@ export abstract class VertexAIModel {
     // @internal (undocumented)
     protected _apiSettings: ApiSettings;
     readonly model: string;
-    static normalizeModelName(modelName: string): string;
-}
+    // @internal (undocumented)
+    static normalizeModelName(modelName: string, developerAPIEnabled?: boolean): string;
+    }
 
 // @public
 export interface VertexAIOptions {

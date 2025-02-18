@@ -1,0 +1,689 @@
+diff --git a/common/api-review/vertexai.api.md b/common/api-review/vertexai.api.md
+index 8b1dd83f5..d99ce0f4c 100644
+--- a/common/api-review/vertexai.api.md
++++ b/common/api-review/vertexai.api.md
+@@ -428,7 +428,9 @@ export enum HarmSeverity {
+     // (undocumented)
+     HARM_SEVERITY_MEDIUM = "HARM_SEVERITY_MEDIUM",
+     // (undocumented)
+-    HARM_SEVERITY_NEGLIGIBLE = "HARM_SEVERITY_NEGLIGIBLE"
++    HARM_SEVERITY_NEGLIGIBLE = "HARM_SEVERITY_NEGLIGIBLE",
++    // (undocumented)
++    HARM_SEVERITY_UNSPECIFIED = "HARM_SEVERITY_UNSPECIFIED"
+ }
+ 
+ // @beta
+@@ -642,7 +644,6 @@ export interface SafetyRating {
+ export interface SafetySetting {
+     // (undocumented)
+     category: HarmCategory;
+-    // (undocumented)
+     method?: HarmBlockMethod;
+     // (undocumented)
+     threshold: HarmBlockThreshold;
+@@ -797,6 +798,8 @@ export interface UsageMetadata {
+ export interface VertexAI {
+     app: FirebaseApp;
+     // (undocumented)
++    developerAPIEnabled: boolean;
++    // (undocumented)
+     location: string;
+ }
+ 
+@@ -821,7 +824,8 @@ export const enum VertexAIErrorCode {
+     NO_PROJECT_ID = "no-project-id",
+     PARSE_FAILED = "parse-failed",
+     REQUEST_ERROR = "request-error",
+-    RESPONSE_ERROR = "response-error"
++    RESPONSE_ERROR = "response-error",
++    UNSUPPORTED = "unsupported"
+ }
+ 
+ // @public
+@@ -831,11 +835,13 @@ export abstract class VertexAIModel {
+     // @internal (undocumented)
+     protected _apiSettings: ApiSettings;
+     readonly model: string;
+-    static normalizeModelName(modelName: string): string;
++    static normalizeModelName(modelName: string, developerAPIEnabled?: boolean): string;
+ }
+ 
+ // @public
+ export interface VertexAIOptions {
++    // (undocumented)
++    developerAPIEnabled: boolean;
+     // (undocumented)
+     location?: string;
+ }
+diff --git a/packages/vertexai/src/api.ts b/packages/vertexai/src/api.ts
+index 752e75c7e..95c918980 100644
+--- a/packages/vertexai/src/api.ts
++++ b/packages/vertexai/src/api.ts
+@@ -29,6 +29,7 @@ import {
+ } from './types';
+ import { VertexAIError } from './errors';
+ import { VertexAIModel, GenerativeModel, ImagenModel } from './models';
++import { createInstanceIdentifier } from './helpers';
+ 
+ export { ChatSession } from './methods/chat-session';
+ export * from './requests/schema-builder';
+@@ -57,8 +58,12 @@ export function getVertexAI(
+   // Dependencies
+   const vertexProvider: Provider<'vertexAI'> = _getProvider(app, VERTEX_TYPE);
+ 
++  const identifier = createInstanceIdentifier(
++    options?.developerAPIEnabled,
++    options?.location
++  );
+   return vertexProvider.getImmediate({
+-    identifier: options?.location || DEFAULT_LOCATION
++    identifier
+   });
+ }
+ 
+diff --git a/packages/vertexai/src/constants.ts b/packages/vertexai/src/constants.ts
+index 357e6c4e7..a9bf11105 100644
+--- a/packages/vertexai/src/constants.ts
++++ b/packages/vertexai/src/constants.ts
+@@ -23,6 +23,9 @@ export const DEFAULT_LOCATION = 'us-central1';
+ 
+ export const DEFAULT_BASE_URL = 'https://firebasevertexai.googleapis.com';
+ 
++export const DEVELOPER_API_BASE_URL =
++  'https://generativelanguage.googleapis.com';
++
+ export const DEFAULT_API_VERSION = 'v1beta';
+ 
+ export const PACKAGE_VERSION = version;
+diff --git a/packages/vertexai/src/helpers.ts b/packages/vertexai/src/helpers.ts
+new file mode 100644
+index 000000000..35d212658
+--- /dev/null
++++ b/packages/vertexai/src/helpers.ts
+@@ -0,0 +1,54 @@
++/**
++ * @license
++ * Copyright 2025 Google LLC
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *   http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++import { DEFAULT_LOCATION } from './constants';
++
++/**
++ * @internal
++ */
++export function createInstanceIdentifier(
++  developerAPIEnabled?: boolean,
++  location?: string
++): string {
++  if (developerAPIEnabled) {
++    return 'developerAPI';
++  } else {
++    return `vertexAI/${location || DEFAULT_LOCATION}`;
++  }
++}
++
++/**
++ * @internal
++ */
++export function parseInstanceIdentifier(instanceIdentifier: string): {
++  developerAPIEnabled: boolean;
++  location?: string;
++} {
++  const identifierParts = instanceIdentifier.split('/');
++  if (identifierParts[0] === 'developerAPI') {
++    return {
++      developerAPIEnabled: true,
++      location: undefined
++    };
++  } else {
++    const location = identifierParts[1];
++    return {
++      developerAPIEnabled: false,
++      location
++    };
++  }
++}
+diff --git a/packages/vertexai/src/index.node.ts b/packages/vertexai/src/index.node.ts
+index 6a1878814..3a8c34efe 100644
+--- a/packages/vertexai/src/index.node.ts
++++ b/packages/vertexai/src/index.node.ts
+@@ -26,17 +26,35 @@ import { VertexAIService } from './service';
+ import { VERTEX_TYPE } from './constants';
+ import { Component, ComponentType } from '@firebase/component';
+ import { name, version } from '../package.json';
++import { VertexAIOptions } from './public-types';
++import { parseInstanceIdentifier } from './helpers';
+ 
+ function registerVertex(): void {
+   _registerComponent(
+     new Component(
+       VERTEX_TYPE,
+-      (container, { instanceIdentifier: location }) => {
++      (container, options) => {
+         // getImmediate for FirebaseApp will always succeed
+         const app = container.getProvider('app').getImmediate();
+         const auth = container.getProvider('auth-internal');
+         const appCheckProvider = container.getProvider('app-check-internal');
+-        return new VertexAIService(app, auth, appCheckProvider, { location });
++
++        let vertexAIOptions: VertexAIOptions;
++        if (options.instanceIdentifier) {
++          vertexAIOptions = parseInstanceIdentifier(options.instanceIdentifier);
++        } else {
++          vertexAIOptions = {
++            developerAPIEnabled: false,
++            location: undefined
++          };
++        }
++
++        return new VertexAIService(
++          app,
++          auth,
++          appCheckProvider,
++          vertexAIOptions
++        );
+       },
+       ComponentType.PUBLIC
+     ).setMultipleInstances(true)
+diff --git a/packages/vertexai/src/index.ts b/packages/vertexai/src/index.ts
+index 5d646e8d9..e2d278e12 100644
+--- a/packages/vertexai/src/index.ts
++++ b/packages/vertexai/src/index.ts
+@@ -24,8 +24,14 @@
+ import { registerVersion, _registerComponent } from '@firebase/app';
+ import { VertexAIService } from './service';
+ import { VERTEX_TYPE } from './constants';
+-import { Component, ComponentType } from '@firebase/component';
++import {
++  Component,
++  ComponentType,
++  InstanceFactoryOptions
++} from '@firebase/component';
+ import { name, version } from '../package.json';
++import { parseInstanceIdentifier } from './helpers';
++import { VertexAIOptions } from './public-types';
+ 
+ declare global {
+   interface Window {
+@@ -37,12 +43,28 @@ function registerVertex(): void {
+   _registerComponent(
+     new Component(
+       VERTEX_TYPE,
+-      (container, { instanceIdentifier: location }) => {
++      (container, options) => {
+         // getImmediate for FirebaseApp will always succeed
+         const app = container.getProvider('app').getImmediate();
+         const auth = container.getProvider('auth-internal');
+         const appCheckProvider = container.getProvider('app-check-internal');
+-        return new VertexAIService(app, auth, appCheckProvider, { location });
++
++        let vertexAIOptions: VertexAIOptions;
++        if (options.instanceIdentifier) {
++          vertexAIOptions = parseInstanceIdentifier(options.instanceIdentifier);
++        } else {
++          vertexAIOptions = {
++            developerAPIEnabled: false,
++            location: undefined
++          };
++        }
++
++        return new VertexAIService(
++          app,
++          auth,
++          appCheckProvider,
++          vertexAIOptions
++        );
+       },
+       ComponentType.PUBLIC
+     ).setMultipleInstances(true)
+diff --git a/packages/vertexai/src/methods/count-tokens.ts b/packages/vertexai/src/methods/count-tokens.ts
+index c9d43a5b6..549db35c3 100644
+--- a/packages/vertexai/src/methods/count-tokens.ts
++++ b/packages/vertexai/src/methods/count-tokens.ts
+@@ -22,6 +22,7 @@ import {
+ } from '../types';
+ import { Task, makeRequest } from '../requests/request';
+ import { ApiSettings } from '../types/internal';
++import { DeveloperAPIMapper } from '../developerAPI';
+ 
+ export async function countTokens(
+   apiSettings: ApiSettings,
+@@ -29,12 +30,19 @@ export async function countTokens(
+   params: CountTokensRequest,
+   requestOptions?: RequestOptions
+ ): Promise<CountTokensResponse> {
++  let body: string = '';
++  if (apiSettings.developerAPIEnabled) {
++    const mappedParams = DeveloperAPIMapper.mapCountTokensRequest(params);
++    body = JSON.stringify(mappedParams);
++  } else {
++    body = JSON.stringify(params);
++  }
+   const response = await makeRequest(
+     model,
+     Task.COUNT_TOKENS,
+     apiSettings,
+     false,
+-    JSON.stringify(params),
++    body,
+     requestOptions
+   );
+   return response.json();
+diff --git a/packages/vertexai/src/methods/generate-content.ts b/packages/vertexai/src/methods/generate-content.ts
+index 0944b3801..9db8f3807 100644
+--- a/packages/vertexai/src/methods/generate-content.ts
++++ b/packages/vertexai/src/methods/generate-content.ts
+@@ -20,12 +20,14 @@ import {
+   GenerateContentResponse,
+   GenerateContentResult,
+   GenerateContentStreamResult,
+-  RequestOptions
++  RequestOptions,
++  VertexAIErrorCode
+ } from '../types';
+ import { Task, makeRequest } from '../requests/request';
+ import { createEnhancedContentResponse } from '../requests/response-helpers';
+ import { processStream } from '../requests/stream-reader';
+ import { ApiSettings } from '../types/internal';
++import { DeveloperAPIMapper } from '../developerAPI';
+ 
+ export async function generateContentStream(
+   apiSettings: ApiSettings,
+@@ -33,6 +35,10 @@ export async function generateContentStream(
+   params: GenerateContentRequest,
+   requestOptions?: RequestOptions
+ ): Promise<GenerateContentStreamResult> {
++  if (apiSettings.developerAPIEnabled) {
++    DeveloperAPIMapper.validateGenerateContentRequest(params);
++    params = DeveloperAPIMapper.mapGenerateContentRequest(params);
++  }
+   const response = await makeRequest(
+     model,
+     Task.STREAM_GENERATE_CONTENT,
+@@ -50,6 +56,10 @@ export async function generateContent(
+   params: GenerateContentRequest,
+   requestOptions?: RequestOptions
+ ): Promise<GenerateContentResult> {
++  if (apiSettings.developerAPIEnabled) {
++    DeveloperAPIMapper.validateGenerateContentRequest(params);
++    params = DeveloperAPIMapper.mapGenerateContentRequest(params);
++  }
+   const response = await makeRequest(
+     model,
+     Task.GENERATE_CONTENT,
+@@ -58,8 +68,14 @@ export async function generateContent(
+     JSON.stringify(params),
+     requestOptions
+   );
+-  const responseJson: GenerateContentResponse = await response.json();
+-  const enhancedResponse = createEnhancedContentResponse(responseJson);
++  const responseJson: any = await response.json();
++  const generateContentResponse: GenerateContentResponse =
++    apiSettings.developerAPIEnabled
++      ? DeveloperAPIMapper.mapGenerateContentResponse(responseJson)
++      : await responseJson;
++  const enhancedResponse = createEnhancedContentResponse(
++    generateContentResponse
++  );
+   return {
+     response: enhancedResponse
+   };
+diff --git a/packages/vertexai/src/models/vertexai-model.ts b/packages/vertexai/src/models/vertexai-model.ts
+index 4e211c0cf..1e17cd86f 100644
+--- a/packages/vertexai/src/models/vertexai-model.ts
++++ b/packages/vertexai/src/models/vertexai-model.ts
+@@ -56,8 +56,6 @@ export abstract class VertexAIModel {
+    * @internal
+    */
+   protected constructor(vertexAI: VertexAI, modelName: string) {
+-    this.model = VertexAIModel.normalizeModelName(modelName);
+-
+     if (!vertexAI.app?.options?.apiKey) {
+       throw new VertexAIError(
+         VertexAIErrorCode.NO_API_KEY,
+@@ -72,7 +70,8 @@ export abstract class VertexAIModel {
+       this._apiSettings = {
+         apiKey: vertexAI.app.options.apiKey,
+         project: vertexAI.app.options.projectId,
+-        location: vertexAI.location
++        location: vertexAI.location,
++        developerAPIEnabled: vertexAI.developerAPIEnabled
+       };
+ 
+       if (
+@@ -92,6 +91,11 @@ export abstract class VertexAIModel {
+         this._apiSettings.getAuthToken = () =>
+           (vertexAI as VertexAIService).auth!.getToken();
+       }
++
++      this.model = VertexAIModel.normalizeModelName(
++        modelName,
++        this._apiSettings.developerAPIEnabled
++      );
+     }
+   }
+ 
+@@ -101,19 +105,26 @@ export abstract class VertexAIModel {
+    * @param modelName - The model name to normalize.
+    * @returns The fully qualified model resource name.
+    */
+-  static normalizeModelName(modelName: string): string {
++  static normalizeModelName(
++    modelName: string,
++    developerAPIEnabled?: boolean
++  ): string {
+     let model: string;
+-    if (modelName.includes('/')) {
+-      if (modelName.startsWith('models/')) {
+-        // Add 'publishers/google' if the user is only passing in 'models/model-name'.
+-        model = `publishers/google/${modelName}`;
++    if (developerAPIEnabled) {
++      model = `models/${modelName}`;
++    } else {
++      if (modelName.includes('/')) {
++        if (modelName.startsWith('models/')) {
++          // Add 'publishers/google' if the user is only passing in 'models/model-name'.
++          model = `publishers/google/${modelName}`;
++        } else {
++          // Any other custom format (e.g. tuned models) must be passed in correctly.
++          model = modelName;
++        }
+       } else {
+-        // Any other custom format (e.g. tuned models) must be passed in correctly.
+-        model = modelName;
++        // If path is not included, assume it's a non-tuned model.
++        model = `publishers/google/models/${modelName}`;
+       }
+-    } else {
+-      // If path is not included, assume it's a non-tuned model.
+-      model = `publishers/google/models/${modelName}`;
+     }
+ 
+     return model;
+diff --git a/packages/vertexai/src/public-types.ts b/packages/vertexai/src/public-types.ts
+index 280fee9d1..9aa1a4188 100644
+--- a/packages/vertexai/src/public-types.ts
++++ b/packages/vertexai/src/public-types.ts
+@@ -28,7 +28,8 @@ export interface VertexAI {
+    * The {@link @firebase/app#FirebaseApp} this <code>{@link VertexAI}</code> instance is associated with.
+    */
+   app: FirebaseApp;
+-  location: string;
++  developerAPIEnabled: boolean;
++  location: string; // This is only applicable if we're using the VertexAI API.
+ }
+ 
+ /**
+@@ -36,5 +37,6 @@ export interface VertexAI {
+  * @public
+  */
+ export interface VertexAIOptions {
++  developerAPIEnabled: boolean;
+   location?: string;
+ }
+diff --git a/packages/vertexai/src/requests/request.ts b/packages/vertexai/src/requests/request.ts
+index 9b9465db7..00bf7391e 100644
+--- a/packages/vertexai/src/requests/request.ts
++++ b/packages/vertexai/src/requests/request.ts
+@@ -22,6 +22,7 @@ import {
+   DEFAULT_API_VERSION,
+   DEFAULT_BASE_URL,
+   DEFAULT_FETCH_TIMEOUT_MS,
++  DEVELOPER_API_BASE_URL,
+   LANGUAGE_TAG,
+   PACKAGE_VERSION
+ } from '../constants';
+@@ -45,12 +46,18 @@ export class RequestUrl {
+   toString(): string {
+     // TODO: allow user-set option if that feature becomes available
+     const apiVersion = DEFAULT_API_VERSION;
+-    const baseUrl = this.requestOptions?.baseUrl || DEFAULT_BASE_URL;
+-    let url = `${baseUrl}/${apiVersion}`;
+-    url += `/projects/${this.apiSettings.project}`;
+-    url += `/locations/${this.apiSettings.location}`;
+-    url += `/${this.model}`;
+-    url += `:${this.task}`;
++    let url;
++    if (this.apiSettings.developerAPIEnabled) {
++      const baseUrl = this.requestOptions?.baseUrl || DEVELOPER_API_BASE_URL;
++      url = `${baseUrl}/${apiVersion}/${this.model}:${this.task}`;
++    } else {
++      const baseUrl = this.requestOptions?.baseUrl || DEFAULT_BASE_URL;
++      url = `${baseUrl}/${apiVersion}`;
++      url += `/projects/${this.apiSettings.project}`;
++      url += `/locations/${this.apiSettings.location}`;
++      url += `/${this.model}`;
++      url += `:${this.task}`;
++    }
+     if (this.stream) {
+       url += '?alt=sse';
+     }
+diff --git a/packages/vertexai/src/service.ts b/packages/vertexai/src/service.ts
+index 05b2d559e..12422111a 100644
+--- a/packages/vertexai/src/service.ts
++++ b/packages/vertexai/src/service.ts
+@@ -31,6 +31,7 @@ import { DEFAULT_LOCATION } from './constants';
+ export class VertexAIService implements VertexAI, _FirebaseService {
+   auth: FirebaseAuthInternal | null;
+   appCheck: FirebaseAppCheckInternal | null;
++  developerAPIEnabled: boolean;
+   location: string;
+ 
+   constructor(
+@@ -43,6 +44,7 @@ export class VertexAIService implements VertexAI, _FirebaseService {
+     const auth = authProvider?.getImmediate({ optional: true });
+     this.auth = auth || null;
+     this.appCheck = appCheck || null;
++    this.developerAPIEnabled = this.options?.developerAPIEnabled || false; // FIXME: Should the developer API be enabled by default?
+     this.location = this.options?.location || DEFAULT_LOCATION;
+   }
+ 
+diff --git a/packages/vertexai/src/types/developerAPI/index.ts b/packages/vertexai/src/types/developerAPI/index.ts
+new file mode 100644
+index 000000000..687523190
+--- /dev/null
++++ b/packages/vertexai/src/types/developerAPI/index.ts
+@@ -0,0 +1,18 @@
++/**
++ * @license
++ * Copyright 2025 Google LLC
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *   http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++export * from './responses';
+diff --git a/packages/vertexai/src/types/developerAPI/responses.ts b/packages/vertexai/src/types/developerAPI/responses.ts
+new file mode 100644
+index 000000000..4995744a6
+--- /dev/null
++++ b/packages/vertexai/src/types/developerAPI/responses.ts
+@@ -0,0 +1,48 @@
++/**
++ * @license
++ * Copyright 2025 Google LLC
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *   http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++import { Content } from '../content';
++import { FinishReason } from '../enums';
++import {
++  Citation,
++  GroundingMetadata,
++  PromptFeedback,
++  SafetyRating,
++  UsageMetadata
++} from '../responses';
++
++export namespace DeveloperAPI {
++  export interface GenerateContentResponse {
++    candidates?: GenerateContentCandidate[];
++    promptFeedback?: PromptFeedback;
++    usageMetadata?: UsageMetadata;
++  }
++
++  export interface GenerateContentCandidate {
++    index: number;
++    content: Content;
++    finishReason?: FinishReason;
++    finishMessage?: string;
++    safetyRatings?: SafetyRating[];
++    citationMetadata?: DeveloperAPI.CitationMetadata;
++    groundingMetadata?: GroundingMetadata;
++  }
++
++  export interface CitationMetadata {
++    citationSources: Citation[]; // Maps to `citations`
++  }
++}
+diff --git a/packages/vertexai/src/types/enums.ts b/packages/vertexai/src/types/enums.ts
+index 4a7d95c66..df6172887 100644
+--- a/packages/vertexai/src/types/enums.ts
++++ b/packages/vertexai/src/types/enums.ts
+@@ -90,7 +90,8 @@ export enum HarmSeverity {
+   // Medium level of harm severity.
+   HARM_SEVERITY_MEDIUM = 'HARM_SEVERITY_MEDIUM',
+   // High level of harm severity.
+-  HARM_SEVERITY_HIGH = 'HARM_SEVERITY_HIGH'
++  HARM_SEVERITY_HIGH = 'HARM_SEVERITY_HIGH',
++  HARM_SEVERITY_UNSPECIFIED = 'HARM_SEVERITY_UNSPECIFIED'
+ }
+ 
+ /**
+diff --git a/packages/vertexai/src/types/error.ts b/packages/vertexai/src/types/error.ts
+index 8d83a52a0..e699c8569 100644
+--- a/packages/vertexai/src/types/error.ts
++++ b/packages/vertexai/src/types/error.ts
+@@ -94,5 +94,8 @@ export const enum VertexAIErrorCode {
+   NO_PROJECT_ID = 'no-project-id',
+ 
+   /** An error occurred while parsing. */
+-  PARSE_FAILED = 'parse-failed'
++  PARSE_FAILED = 'parse-failed',
++
++  /** An error occured due an attempt to use an unsupported feature. */
++  UNSUPPORTED = 'unsupported'
+ }
+diff --git a/packages/vertexai/src/types/internal.ts b/packages/vertexai/src/types/internal.ts
+index 87c28a02a..3dd37bf93 100644
+--- a/packages/vertexai/src/types/internal.ts
++++ b/packages/vertexai/src/types/internal.ts
+@@ -24,6 +24,7 @@ export interface ApiSettings {
+   apiKey: string;
+   project: string;
+   location: string;
++  developerAPIEnabled: boolean;
+   getAuthToken?: () => Promise<FirebaseAuthTokenData | null>;
+   getAppCheckToken?: () => Promise<AppCheckTokenResult>;
+ }
+diff --git a/packages/vertexai/src/types/requests.ts b/packages/vertexai/src/types/requests.ts
+index dc7576f23..2df707d67 100644
+--- a/packages/vertexai/src/types/requests.ts
++++ b/packages/vertexai/src/types/requests.ts
+@@ -63,6 +63,9 @@ export interface GenerateContentRequest extends BaseParams {
+ export interface SafetySetting {
+   category: HarmCategory;
+   threshold: HarmBlockThreshold;
++  /**
++   * This property is unsupported in the Developer API. A {@link VertexAIError} will be thrown if it's used.
++   */
+   method?: HarmBlockMethod;
+ }
+ 
+@@ -114,6 +117,7 @@ export interface StartChatParams extends BaseParams {
+  */
+ export interface CountTokensRequest {
+   contents: Content[];
++  // TODO: Add missing properties
+ }
+ 
+ /**
+diff --git a/packages/vertexai/src/types/responses.ts b/packages/vertexai/src/types/responses.ts
+index 5685ed68a..966c9feca 100644
+--- a/packages/vertexai/src/types/responses.ts
++++ b/packages/vertexai/src/types/responses.ts
+@@ -108,7 +108,7 @@ export interface ModalityTokenCount {
+ export interface PromptFeedback {
+   blockReason?: BlockReason;
+   safetyRatings: SafetyRating[];
+-  blockReasonMessage?: string;
++  blockReasonMessage?: string; // This will always be undefined when using the Developer API.
+ }
+ 
+ /**
+@@ -142,8 +142,8 @@ export interface Citation {
+   endIndex?: number;
+   uri?: string;
+   license?: string;
+-  title?: string;
+-  publicationDate?: Date;
++  title?: string; // This will always be undefined when using the Developer API.
++  publicationDate?: Date; // This will always be undefined when using the Developer API.
+ }
+ 
+ /**
+@@ -211,7 +211,7 @@ export interface SafetyRating {
+   severity: HarmSeverity;
+   probabilityScore: number;
+   severityScore: number;
+-  blocked: boolean;
++  blocked: boolean; // FIXME: This is only included when it's true. Either set a default of false, or make this optional.
+ }
+ 
+ /**
+@@ -227,7 +227,7 @@ export interface CountTokensResponse {
+    * The total number of billable characters counted across all instances
+    * from the request.
+    */
+-  totalBillableCharacters?: number;
++  totalBillableCharacters?: number; // This will always be undefined when using the Developer API.
+   /**
+    * The breakdown, by modality, of how many tokens are consumed by the prompt.
+    */
+diff --git a/packages/vertexai/src/types/schema.ts b/packages/vertexai/src/types/schema.ts
+index fca213431..1bcf61e1a 100644
+--- a/packages/vertexai/src/types/schema.ts
++++ b/packages/vertexai/src/types/schema.ts
+@@ -42,7 +42,9 @@ export enum SchemaType {
+  * @public
+  */
+ export interface SchemaShared<T> {
+-  /** Optional. The format of the property. */
++  /** Optional. The format of the property.
++   * When using the Developer API, this must be either `'enum'` or `'date-time'`.
++   */
+   format?: string;
+   /** Optional. The description of the property. */
+   description?: string;

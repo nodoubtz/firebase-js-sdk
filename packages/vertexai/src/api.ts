@@ -18,9 +18,9 @@
 import { FirebaseApp, getApp, _getProvider } from '@firebase/app';
 import { Provider } from '@firebase/component';
 import { getModularInstance } from '@firebase/util';
-import { DEFAULT_LOCATION, VERTEX_TYPE } from './constants';
+import { VERTEX_TYPE } from './constants';
 import { VertexAIService } from './service';
-import { VertexAI, VertexAIOptions } from './public-types';
+import { Backend, VertexAI, VertexAIOptions } from './public-types';
 import {
   ImagenModelParams,
   ModelParams,
@@ -29,6 +29,7 @@ import {
 } from './types';
 import { VertexAIError } from './errors';
 import { VertexAIModel, GenerativeModel, ImagenModel } from './models';
+import { createInstanceIdentifier } from './helpers';
 
 export { ChatSession } from './methods/chat-session';
 export * from './requests/schema-builder';
@@ -57,8 +58,35 @@ export function getVertexAI(
   // Dependencies
   const vertexProvider: Provider<'vertexAI'> = _getProvider(app, VERTEX_TYPE);
 
+  const identifier = createInstanceIdentifier(
+    Backend.VERTEX_AI,
+    options?.location
+  );
   return vertexProvider.getImmediate({
-    identifier: options?.location || DEFAULT_LOCATION
+    identifier
+  });
+}
+
+/**
+ * Returns a <code>{@link VertexAI}</code> instance for the given app that has the Developer
+ * API enabled.
+ *
+ * @public
+ *
+ * @param app - The {@link @firebase/app#FirebaseApp} to use.
+ */
+export function getDeveloperAPI(
+  app: FirebaseApp = getApp(),
+): VertexAI {
+  app = getModularInstance(app);
+  // Dependencies
+  const vertexProvider: Provider<'vertexAI'> = _getProvider(app, VERTEX_TYPE);
+
+  const identifier = createInstanceIdentifier(
+    Backend.GEMINI_DEVELOPER_API,
+  );
+  return vertexProvider.getImmediate({
+    identifier
   });
 }
 

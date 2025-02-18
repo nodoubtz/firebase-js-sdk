@@ -56,8 +56,6 @@ export abstract class VertexAIModel {
    * @internal
    */
   protected constructor(vertexAI: VertexAI, modelName: string) {
-    this.model = VertexAIModel.normalizeModelName(modelName);
-
     if (!vertexAI.app?.options?.apiKey) {
       throw new VertexAIError(
         VertexAIErrorCode.NO_API_KEY,
@@ -72,7 +70,8 @@ export abstract class VertexAIModel {
       this._apiSettings = {
         apiKey: vertexAI.app.options.apiKey,
         project: vertexAI.app.options.projectId,
-        location: vertexAI.location
+        location: vertexAI.location,
+        developerAPIEnabled: vertexAI.developerAPIEnabled
       };
 
       if (
@@ -92,16 +91,35 @@ export abstract class VertexAIModel {
         this._apiSettings.getAuthToken = () =>
           (vertexAI as VertexAIService).auth!.getToken();
       }
+
+      this.model = VertexAIModel.normalizeModelName(
+        modelName,
+        this._apiSettings.developerAPIEnabled
+      );
     }
   }
 
   /**
-   * Normalizes the given model name to a fully qualified model resource name.
-   *
+   * @internal
    * @param modelName - The model name to normalize.
    * @returns The fully qualified model resource name.
    */
-  static normalizeModelName(modelName: string): string {
+  static normalizeModelName(
+    modelName: string,
+    developerAPIEnabled?: boolean
+  ): string {
+    if (developerAPIEnabled) {
+      return VertexAIModel.normalizeDeveloperApiModelName(modelName);
+    } else {
+      return VertexAIModel.normalizeVertexAIModelName(modelName);
+    }
+  }
+
+  private static normalizeDeveloperApiModelName(modelName: string): string {
+    return `models/${modelName}`;
+  }
+
+  private static normalizeVertexAIModelName(modelName: string): string {
     let model: string;
     if (modelName.includes('/')) {
       if (modelName.startsWith('models/')) {

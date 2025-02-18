@@ -94,5 +94,8 @@ export const enum VertexAIErrorCode {
   NO_PROJECT_ID = 'no-project-id',
 
   /** An error occurred while parsing. */
-  PARSE_FAILED = 'parse-failed'
+  PARSE_FAILED = 'parse-failed',
+
+  /** An error occured due an attempt to use an unsupported feature. */
+  UNSUPPORTED = 'unsupported'
 }

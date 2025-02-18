@@ -22,6 +22,7 @@ import {
   DEFAULT_API_VERSION,
   DEFAULT_BASE_URL,
   DEFAULT_FETCH_TIMEOUT_MS,
+  DEVELOPER_API_BASE_URL,
   LANGUAGE_TAG,
   PACKAGE_VERSION
 } from '../constants';
@@ -45,16 +46,22 @@ export class RequestUrl {
   toString(): string {
     // TODO: allow user-set option if that feature becomes available
     const apiVersion = DEFAULT_API_VERSION;
-    const baseUrl = this.requestOptions?.baseUrl || DEFAULT_BASE_URL;
-    let url = `${baseUrl}/${apiVersion}`;
-    url += `/projects/${this.apiSettings.project}`;
-    url += `/locations/${this.apiSettings.location}`;
-    url += `/${this.model}`;
-    url += `:${this.task}`;
+    let url = `${this.getBaseUrl()}/${apiVersion}`;
+    if (this.apiSettings.developerAPIEnabled) {
+      url += `/${this.model}:${this.task}`;
+    } else {
+      url += `/projects/${this.apiSettings.project}/locations/${this.apiSettings.location}/${this.model}:${this.task}`;
+    }
     if (this.stream) {
       url += '?alt=sse';
     }
     return url;
+  }
+
+  private getBaseUrl(): string {
+    return this.apiSettings.developerAPIEnabled
+      ? this.requestOptions?.baseUrl || DEVELOPER_API_BASE_URL
+      : this.requestOptions?.baseUrl || DEFAULT_BASE_URL;
   }
 
   /**

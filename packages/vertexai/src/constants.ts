@@ -16,12 +16,21 @@
  */
 
 import { version } from '../package.json';
+import { Backend, InstanceIdentifier } from './public-types';
 
 export const VERTEX_TYPE = 'vertexAI';
+
+export const DEFAULT_INSTANCE_IDENTIFER: InstanceIdentifier = {
+  backend: Backend.GEMINI_DEVELOPER_API,
+  location: undefined
+}
 
 export const DEFAULT_LOCATION = 'us-central1';
 
 export const DEFAULT_BASE_URL = 'https://firebasevertexai.googleapis.com';
+
+export const DEVELOPER_API_BASE_URL =
+  'https://generativelanguage.googleapis.com';
 
 export const DEFAULT_API_VERSION = 'v1beta';
 
