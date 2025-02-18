@@ -324,7 +324,7 @@ export interface GenerativeContentBlob {
 
 // @public
 export class GenerativeModel extends VertexAIModel {
-    constructor(vertexAI: VertexAI, modelParams: ModelParams, requestOptions?: RequestOptions);
+    constructor(vertexAI: VertexAI, modelParams: ModelParams, requestOptions?: RequestOptions, developerAPIEnabled?: boolean);
     countTokens(request: CountTokensRequest | string | Array<string | Part>): Promise<CountTokensResponse>;
     generateContent(request: GenerateContentRequest | string | Array<string | Part>): Promise<GenerateContentResult>;
     generateContentStream(request: GenerateContentRequest | string | Array<string | Part>): Promise<GenerateContentStreamResult>;
@@ -344,7 +344,7 @@ export class GenerativeModel extends VertexAIModel {
 }
 
 // @public
-export function getGenerativeModel(vertexAI: VertexAI, modelParams: ModelParams, requestOptions?: RequestOptions): GenerativeModel;
+export function getGenerativeModel(vertexAI: VertexAI, modelParams: ModelParams, requestOptions?: RequestOptions, enableDeveloperAPI?: boolean): GenerativeModel;
 
 // @beta
 export function getImagenModel(vertexAI: VertexAI, modelParams: ImagenModelParams, requestOptions?: RequestOptions): ImagenModel;
@@ -776,6 +776,8 @@ export interface UsageMetadata {
 export interface VertexAI {
     app: FirebaseApp;
     // (undocumented)
+    developerAPIEnabled: boolean;
+    // (undocumented)
     location: string;
 }
 
@@ -806,15 +808,17 @@ export const enum VertexAIErrorCode {
 // @public
 export abstract class VertexAIModel {
     // @internal
-    protected constructor(vertexAI: VertexAI, modelName: string);
+    protected constructor(vertexAI: VertexAI, modelName: string, developerAPIEnabled?: boolean);
     // @internal (undocumented)
     protected _apiSettings: ApiSettings;
     readonly model: string;
-    static normalizeModelName(modelName: string): string;
+    static normalizeModelName(modelName: string, developerAPIEnabled?: boolean): string;
 }
 
 // @public
 export interface VertexAIOptions {
+    // (undocumented)
+    developerAPIEnabled: boolean;
     // (undocumented)
     location?: string;
 }

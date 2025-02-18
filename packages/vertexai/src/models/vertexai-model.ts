@@ -55,8 +55,8 @@ export abstract class VertexAIModel {
    *
    * @internal
    */
-  protected constructor(vertexAI: VertexAI, modelName: string) {
-    this.model = VertexAIModel.normalizeModelName(modelName);
+  protected constructor(vertexAI: VertexAI, modelName: string, developerAPIEnabled?: boolean) {
+    this.model = VertexAIModel.normalizeModelName(modelName, developerAPIEnabled);
 
     if (!vertexAI.app?.options?.apiKey) {
       throw new VertexAIError(
@@ -72,7 +72,8 @@ export abstract class VertexAIModel {
       this._apiSettings = {
         apiKey: vertexAI.app.options.apiKey,
         project: vertexAI.app.options.projectId,
-        location: vertexAI.location
+        location: vertexAI.location,
+        developerAPIEnabled: developerAPIEnabled ? developerAPIEnabled : false
       };
 
       if (
@@ -101,19 +102,23 @@ export abstract class VertexAIModel {
    * @param modelName - The model name to normalize.
    * @returns The fully qualified model resource name.
    */
-  static normalizeModelName(modelName: string): string {
+  static normalizeModelName(modelName: string, developerAPIEnabled?: boolean): string {
     let model: string;
-    if (modelName.includes('/')) {
-      if (modelName.startsWith('models/')) {
-        // Add 'publishers/google' if the user is only passing in 'models/model-name'.
-        model = `publishers/google/${modelName}`;
-      } else {
-        // Any other custom format (e.g. tuned models) must be passed in correctly.
-        model = modelName;
-      }
+    if (developerAPIEnabled) {
+      model = `models/${modelName}`;
     } else {
-      // If path is not included, assume it's a non-tuned model.
-      model = `publishers/google/models/${modelName}`;
+      if (modelName.includes('/')) {
+        if (modelName.startsWith('models/')) {
+          // Add 'publishers/google' if the user is only passing in 'models/model-name'.
+          model = `publishers/google/${modelName}`;
+        } else {
+          // Any other custom format (e.g. tuned models) must be passed in correctly.
+          model = modelName;
+        }
+      } else {
+        // If path is not included, assume it's a non-tuned model.
+        model = `publishers/google/models/${modelName}`;
+      }
     }
 
     return model;

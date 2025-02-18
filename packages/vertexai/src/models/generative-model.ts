@@ -59,9 +59,10 @@ export class GenerativeModel extends VertexAIModel {
   constructor(
     vertexAI: VertexAI,
     modelParams: ModelParams,
-    requestOptions?: RequestOptions
+    requestOptions?: RequestOptions,
+    developerAPIEnabled?: boolean // FIXME: Don't require 'skipping' requestOptions to set this.
   ) {
-    super(vertexAI, modelParams.model);
+    super(vertexAI, modelParams.model, developerAPIEnabled);
     this.generationConfig = modelParams.generationConfig || {};
     this.safetySettings = modelParams.safetySettings || [];
     this.tools = modelParams.tools;

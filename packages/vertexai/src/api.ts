@@ -29,6 +29,7 @@ import {
 } from './types';
 import { VertexAIError } from './errors';
 import { VertexAIModel, GenerativeModel, ImagenModel } from './models';
+import { createInstanceIdentifier } from './helpers';
 
 export { ChatSession } from './methods/chat-session';
 export * from './requests/schema-builder';
@@ -57,8 +58,9 @@ export function getVertexAI(
   // Dependencies
   const vertexProvider: Provider<'vertexAI'> = _getProvider(app, VERTEX_TYPE);
 
+  const identifier = createInstanceIdentifier(options?.developerAPIEnabled, options?.location);
   return vertexProvider.getImmediate({
-    identifier: options?.location || DEFAULT_LOCATION
+    identifier
   });
 }
 
@@ -71,7 +73,8 @@ export function getVertexAI(
 export function getGenerativeModel(
   vertexAI: VertexAI,
   modelParams: ModelParams,
-  requestOptions?: RequestOptions
+  requestOptions?: RequestOptions,
+  enableDeveloperAPI?: boolean
 ): GenerativeModel {
   if (!modelParams.model) {
     throw new VertexAIError(
@@ -79,7 +82,7 @@ export function getGenerativeModel(
       `Must provide a model name. Example: getGenerativeModel({ model: 'my-model-name' })`
     );
   }
-  return new GenerativeModel(vertexAI, modelParams, requestOptions);
+  return new GenerativeModel(vertexAI, modelParams, requestOptions, enableDeveloperAPI);
 }
 
 /**
