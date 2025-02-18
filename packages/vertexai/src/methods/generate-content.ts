@@ -56,7 +56,7 @@ export async function generateContent(
     apiSettings,
     /* stream */ false,
     JSON.stringify(params),
-    requestOptions
+    requestOptions,
   );
   const responseJson: GenerateContentResponse = await response.json();
   const enhancedResponse = createEnhancedContentResponse(responseJson);

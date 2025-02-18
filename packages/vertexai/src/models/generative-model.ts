@@ -59,7 +59,7 @@ export class GenerativeModel extends VertexAIModel {
   constructor(
     vertexAI: VertexAI,
     modelParams: ModelParams,
-    requestOptions?: RequestOptions
+    requestOptions?: RequestOptions,
   ) {
     super(vertexAI, modelParams.model);
     this.generationConfig = modelParams.generationConfig || {};
