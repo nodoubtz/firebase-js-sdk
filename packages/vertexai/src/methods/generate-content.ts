@@ -59,6 +59,14 @@ export async function generateContent(
     requestOptions
   );
   const responseJson: GenerateContentResponse = await response.json();
+  responseJson.candidates?.forEach(candidate => {
+    candidate.safetyRatings?.forEach(safetyRating => {
+      // The blocked property is only defined when true
+      if (!safetyRating.blocked) {
+        safetyRating.blocked = false;
+      }
+    })
+  })
   const enhancedResponse = createEnhancedContentResponse(responseJson);
   return {
     response: enhancedResponse

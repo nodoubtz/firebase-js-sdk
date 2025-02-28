@@ -77,6 +77,15 @@ async function* generateResponseSequence(
       break;
     }
 
+    value.candidates?.forEach(candidate => {
+      candidate.safetyRatings?.forEach(safetyRating => {
+        // The blocked property is only defined when true
+        if (!safetyRating.blocked) {
+          safetyRating.blocked = false;
+        }
+      })
+    })
+
     const enhancedResponse = createEnhancedContentResponse(value);
     yield enhancedResponse;
   }
@@ -209,6 +218,13 @@ export function aggregateResponses(
             );
           }
         }
+
+        candidate.safetyRatings?.forEach(safetyRating => {
+          // The blocked property will only be defined when true
+          if (!safetyRating.blocked) {
+            safetyRating.blocked = false;
+          }
+        })
       }
     }
   }
