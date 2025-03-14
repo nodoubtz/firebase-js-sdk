@@ -164,7 +164,7 @@ export function getFunctionCalls(
   }
 }
 
-const badFinishReasons = [FinishReason.RECITATION, FinishReason.SAFETY];
+const badFinishReasons = [FinishReason.RECITATION, FinishReason.SAFETY, FinishReason.BLOCKLIST, FinishReason.MALFORMED_FUNCTION_CALL, FinishReason.PROHIBITED_CONTENT, FinishReason.PROHIBITED_CONTENT];
 
 function hadBadFinishReason(candidate: GenerateContentCandidate): boolean {
   return (

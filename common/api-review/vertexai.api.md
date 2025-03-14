@@ -27,12 +27,15 @@ export interface BaseParams {
 }
 
 // @public
-export enum BlockReason {
-    BLOCKLIST = "BLOCKLIST",
-    OTHER = "OTHER",
-    PROHIBITED_CONTENT = "PROHIBITED_CONTENT",
-    SAFETY = "SAFETY"
-}
+export const BlockReason: {
+    readonly SAFETY: "SAFETY";
+    readonly OTHER: "OTHER";
+    readonly BLOCKLIST: "BLOCKLIST";
+    readonly PROHIBITED_CONTENT: "PROHIBITED_CONTENT";
+};
+
+// @public (undocumented)
+export type BlockReason = typeof BlockReason[keyof typeof BlockReason];
 
 // @public
 export class BooleanSchema extends Schema {
@@ -160,17 +163,20 @@ export interface FileDataPart {
 }
 
 // @public
-export enum FinishReason {
-    BLOCKLIST = "BLOCKLIST",
-    MALFORMED_FUNCTION_CALL = "MALFORMED_FUNCTION_CALL",
-    MAX_TOKENS = "MAX_TOKENS",
-    OTHER = "OTHER",
-    PROHIBITED_CONTENT = "PROHIBITED_CONTENT",
-    RECITATION = "RECITATION",
-    SAFETY = "SAFETY",
-    SPII = "SPII",
-    STOP = "STOP"
-}
+export const FinishReason: {
+    readonly STOP: "STOP";
+    readonly MAX_TOKENS: "MAX_TOKENS";
+    readonly SAFETY: "SAFETY";
+    readonly RECITATION: "RECITATION";
+    readonly OTHER: "OTHER";
+    readonly BLOCKLIST: "BLOCKLIST";
+    readonly PROHIBITED_CONTENT: "PROHIBITED_CONTENT";
+    readonly SPII: "SPII";
+    readonly MALFORMED_FUNCTION_CALL: "MALFORMED_FUNCTION_CALL";
+};
+
+// @public (undocumented)
+export type FinishReason = typeof FinishReason[keyof typeof FinishReason];
 
 // @public
 export interface FunctionCall {
@@ -189,11 +195,14 @@ export interface FunctionCallingConfig {
 }
 
 // @public (undocumented)
-export enum FunctionCallingMode {
-    ANY = "ANY",
-    AUTO = "AUTO",
-    NONE = "NONE"
-}
+export const FunctionCallingMode: {
+    readonly AUTO: "AUTO";
+    readonly ANY: "ANY";
+    readonly NONE: "NONE";
+};
+
+// @public (undocumented)
+export type FunctionCallingMode = typeof FunctionCallingMode[keyof typeof FunctionCallingMode];
 
 // @public
 export interface FunctionCallPart {
@@ -375,46 +384,58 @@ export interface GroundingMetadata {
 }
 
 // @public (undocumented)
-export enum HarmBlockMethod {
-    PROBABILITY = "PROBABILITY",
-    SEVERITY = "SEVERITY"
-}
+export const HarmBlockMethod: {
+    readonly SEVERITY: "SEVERITY";
+    readonly PROBABILITY: "PROBABILITY";
+};
+
+// @public (undocumented)
+export type HarmBlockMethod = typeof HarmBlockMethod[keyof typeof HarmBlockMethod];
 
 // @public
-export enum HarmBlockThreshold {
-    BLOCK_LOW_AND_ABOVE = "BLOCK_LOW_AND_ABOVE",
-    BLOCK_MEDIUM_AND_ABOVE = "BLOCK_MEDIUM_AND_ABOVE",
-    BLOCK_NONE = "BLOCK_NONE",
-    BLOCK_ONLY_HIGH = "BLOCK_ONLY_HIGH"
-}
+export const HarmBlockThreshold: {
+    readonly BLOCK_LOW_AND_ABOVE: "BLOCK_LOW_AND_ABOVE";
+    readonly BLOCK_MEDIUM_AND_ABOVE: "BLOCK_MEDIUM_AND_ABOVE";
+    readonly BLOCK_ONLY_HIGH: "BLOCK_ONLY_HIGH";
+    readonly BLOCK_NONE: "BLOCK_NONE";
+};
+
+// @public (undocumented)
+export type HarmBlockThreshold = typeof HarmBlockThreshold[keyof typeof HarmBlockThreshold];
 
 // @public
-export enum HarmCategory {
-    // (undocumented)
-    HARM_CATEGORY_DANGEROUS_CONTENT = "HARM_CATEGORY_DANGEROUS_CONTENT",
-    // (undocumented)
-    HARM_CATEGORY_HARASSMENT = "HARM_CATEGORY_HARASSMENT",
-    // (undocumented)
-    HARM_CATEGORY_HATE_SPEECH = "HARM_CATEGORY_HATE_SPEECH",
-    // (undocumented)
-    HARM_CATEGORY_SEXUALLY_EXPLICIT = "HARM_CATEGORY_SEXUALLY_EXPLICIT"
-}
+export const HarmCategory: {
+    readonly HARM_CATEGORY_HATE_SPEECH: "HARM_CATEGORY_HATE_SPEECH";
+    readonly HARM_CATEGORY_SEXUALLY_EXPLICIT: "HARM_CATEGORY_SEXUALLY_EXPLICIT";
+    readonly HARM_CATEGORY_HARASSMENT: "HARM_CATEGORY_HARASSMENT";
+    readonly HARM_CATEGORY_DANGEROUS_CONTENT: "HARM_CATEGORY_DANGEROUS_CONTENT";
+};
+
+// @public (undocumented)
+export type HarmCategory = typeof HarmCategory[keyof typeof HarmCategory];
 
 // @public
-export enum HarmProbability {
-    HIGH = "HIGH",
-    LOW = "LOW",
-    MEDIUM = "MEDIUM",
-    NEGLIGIBLE = "NEGLIGIBLE"
-}
+export const HarmProbability: {
+    readonly NEGLIGIBLE: "NEGLIGIBLE";
+    readonly LOW: "LOW";
+    readonly MEDIUM: "MEDIUM";
+    readonly HIGH: "HIGH";
+};
+
+// @public (undocumented)
+export type HarmProbability = typeof HarmProbability[keyof typeof HarmProbability];
 
 // @public
-export enum HarmSeverity {
-    HARM_SEVERITY_HIGH = "HARM_SEVERITY_HIGH",
-    HARM_SEVERITY_LOW = "HARM_SEVERITY_LOW",
-    HARM_SEVERITY_MEDIUM = "HARM_SEVERITY_MEDIUM",
-    HARM_SEVERITY_NEGLIGIBLE = "HARM_SEVERITY_NEGLIGIBLE"
-}
+export const HarmSeverity: {
+    readonly HARM_SEVERITY_NEGLIGIBLE: "HARM_SEVERITY_NEGLIGIBLE";
+    readonly HARM_SEVERITY_LOW: "HARM_SEVERITY_LOW";
+    readonly HARM_SEVERITY_MEDIUM: "HARM_SEVERITY_MEDIUM";
+    readonly HARM_SEVERITY_HIGH: "HARM_SEVERITY_HIGH";
+    readonly HARM_SEVERITY_UNSPECIFIED: "HARM_SEVERITY_UNSPECIFIED";
+};
+
+// @public (undocumented)
+export type HarmSeverity = typeof HarmSeverity[keyof typeof HarmSeverity];
 
 // @beta
 export enum ImagenAspectRatio {
@@ -519,14 +540,17 @@ export class IntegerSchema extends Schema {
 }
 
 // @public
-export enum Modality {
-    AUDIO = "AUDIO",
-    DOCUMENT = "DOCUMENT",
-    IMAGE = "IMAGE",
-    MODALITY_UNSPECIFIED = "MODALITY_UNSPECIFIED",
-    TEXT = "TEXT",
-    VIDEO = "VIDEO"
-}
+export const Modality: {
+    readonly MODALITY_UNSPECIFIED: "MODALITY_UNSPECIFIED";
+    readonly TEXT: "TEXT";
+    readonly IMAGE: "IMAGE";
+    readonly VIDEO: "VIDEO";
+    readonly AUDIO: "AUDIO";
+    readonly DOCUMENT: "DOCUMENT";
+};
+
+// @public (undocumented)
+export type Modality = typeof Modality[keyof typeof Modality];
 
 // @public
 export interface ModalityTokenCount {
