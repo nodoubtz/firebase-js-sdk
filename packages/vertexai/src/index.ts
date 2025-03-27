@@ -22,12 +22,12 @@
  */
 
 import { registerVersion, _registerComponent } from '@firebase/app';
-import { VertexAIService } from './service';
-import { DEFAULT_INSTANCE_IDENTIFER, VERTEX_TYPE } from './constants';
+import { GenAIService } from './service';
+import { DEFAULT_INSTANCE_IDENTIFER, GENAI_TYPE } from './constants';
 import { Component, ComponentType } from '@firebase/component';
 import { name, version } from '../package.json';
-import { parseInstanceIdentifier } from './helpers';
-import { InstanceIdentifier, VertexAIOptions } from './public-types';
+import { decodeInstanceIdentifier } from './helpers';
+import { InstanceIdentifier, GenAIErrorCode } from './public-types';
 
 declare global {
   interface Window {
@@ -35,10 +35,10 @@ declare global {
   }
 }
 
-function registerVertex(): void {
+function registerGenAI(): void {
   _registerComponent(
     new Component(
-      VERTEX_TYPE,
+      GENAI_TYPE,
       (container, options) => {
         // getImmediate for FirebaseApp will always succeed
         const app = container.getProvider('app').getImmediate();
@@ -47,19 +47,18 @@ function registerVertex(): void {
 
         let instanceIdentifier: InstanceIdentifier;
         if (options.instanceIdentifier) {
-          instanceIdentifier = parseInstanceIdentifier(options.instanceIdentifier);
+          instanceIdentifier = decodeInstanceIdentifier(options.instanceIdentifier);
         } else {
           instanceIdentifier = DEFAULT_INSTANCE_IDENTIFER;
         }
 
-        return new VertexAIService(
+        const backend = instanceIdentifier;
+
+        return new GenAIService(
           app,
+          backend,
           auth,
           appCheckProvider,
-          instanceIdentifier.backend,
-          {
-            location: instanceIdentifier?.location
-          },
         );
       },
       ComponentType.PUBLIC
@@ -71,7 +70,7 @@ function registerVertex(): void {
   registerVersion(name, version, '__BUILD_TARGET__');
 }
 
-registerVertex();
+registerGenAI();
 
 export * from './api';
 export * from './public-types';

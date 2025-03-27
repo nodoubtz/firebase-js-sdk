@@ -22,50 +22,49 @@
  */
 
 import { registerVersion, _registerComponent } from '@firebase/app';
-import { VertexAIService } from './service';
-import { VERTEX_TYPE } from './constants';
+import { GenAIService } from './service';
+import { DEFAULT_INSTANCE_IDENTIFER, GENAI_TYPE } from './constants';
 import { Component, ComponentType } from '@firebase/component';
 import { name, version } from '../package.json';
-import { VertexAIOptions } from './public-types';
-import { parseInstanceIdentifier } from './helpers';
+import { InstanceIdentifier } from './public-types';
+import { decodeInstanceIdentifier } from './helpers';
 
-function registerVertex(): void {
+function registerGenAI(): void {
   _registerComponent(
     new Component(
-      VERTEX_TYPE,
+      GENAI_TYPE,
       (container, options) => {
         // getImmediate for FirebaseApp will always succeed
         const app = container.getProvider('app').getImmediate();
         const auth = container.getProvider('auth-internal');
         const appCheckProvider = container.getProvider('app-check-internal');
 
-        let vertexAIOptions: VertexAIOptions;
+        let instanceIdentifier: InstanceIdentifier;
         if (options.instanceIdentifier) {
-          vertexAIOptions = parseInstanceIdentifier(options.instanceIdentifier);
+          instanceIdentifier = decodeInstanceIdentifier(options.instanceIdentifier);
         } else {
-          vertexAIOptions = {
-            developerAPIEnabled: false,
-            location: undefined
-          };
+          instanceIdentifier = DEFAULT_INSTANCE_IDENTIFER;
         }
 
-        return new VertexAIService(
+        const backend = instanceIdentifier;
+
+        return new GenAIService(
           app,
+          backend,
           auth,
           appCheckProvider,
-          vertexAIOptions
         );
       },
       ComponentType.PUBLIC
     ).setMultipleInstances(true)
   );
 
-  registerVersion(name, version, 'node');
+  registerVersion(name, version);
   // BUILD_TARGET will be replaced by values like esm2017, cjs2017, etc during the compilation
   registerVersion(name, version, '__BUILD_TARGET__');
 }
 
-registerVertex();
+registerGenAI();
 
 export * from './api';
 export * from './public-types';

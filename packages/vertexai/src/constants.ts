@@ -16,13 +16,14 @@
  */
 
 import { version } from '../package.json';
-import { Backend, InstanceIdentifier } from './public-types';
+import { BackendType, InstanceIdentifier } from './public-types';
 
 export const VERTEX_TYPE = 'vertexAI';
 
+export const GENAI_TYPE = 'genAI';
+
 export const DEFAULT_INSTANCE_IDENTIFER: InstanceIdentifier = {
-  backend: Backend.GEMINI_DEVELOPER_API,
-  location: undefined
+  backendType: BackendType.GOOGLE_AI,
 }
 
 export const DEFAULT_LOCATION = 'us-central1';

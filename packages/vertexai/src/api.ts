@@ -18,28 +18,28 @@
 import { FirebaseApp, getApp, _getProvider } from '@firebase/app';
 import { Provider } from '@firebase/component';
 import { getModularInstance } from '@firebase/util';
-import { VERTEX_TYPE } from './constants';
-import { VertexAIService } from './service';
-import { Backend, VertexAI, VertexAIOptions } from './public-types';
+import { DEFAULT_LOCATION, GENAI_TYPE } from './constants';
+import { GenAIService } from './service';
+import { BackendType, GenAI, GenAIOptions, GoogleAIBackend, VertexAI, VertexAIBackend, VertexAIOptions } from './public-types';
 import {
   ImagenModelParams,
   ModelParams,
   RequestOptions,
-  VertexAIErrorCode
+  GenAIErrorCode
 } from './types';
-import { VertexAIError } from './errors';
-import { VertexAIModel, GenerativeModel, ImagenModel } from './models';
-import { createInstanceIdentifier } from './helpers';
+import { GenAIError } from './errors';
+import { GenAIModel, GenerativeModel, ImagenModel } from './models';
+import { encodeInstanceIdentifier } from './helpers';
 
 export { ChatSession } from './methods/chat-session';
 export * from './requests/schema-builder';
 export { ImagenImageFormat } from './requests/imagen-image-format';
-export { VertexAIModel, GenerativeModel, ImagenModel };
-export { VertexAIError };
+export { GenAIModel as VertexAIModel, GenerativeModel, ImagenModel };
+export { GenAIError, GenAIError as VertexAIError };
 
 declare module '@firebase/component' {
   interface NameServiceMapping {
-    [VERTEX_TYPE]: VertexAIService;
+    [GENAI_TYPE]: GenAIService;
   }
 }
 
@@ -47,6 +47,8 @@ declare module '@firebase/component' {
  * Returns a <code>{@link VertexAI}</code> instance for the given app.
  *
  * @public
+ * 
+ * @deprecated Use {@link getGenAI} instead. For example: `getGenAI(app, { backend: vertexAI() })`.
  *
  * @param app - The {@link @firebase/app#FirebaseApp} to use.
  */
@@ -56,13 +58,13 @@ export function getVertexAI(
 ): VertexAI {
   app = getModularInstance(app);
   // Dependencies
-  const vertexProvider: Provider<'vertexAI'> = _getProvider(app, VERTEX_TYPE);
+  const genAIProvider: Provider<'genAI'> = _getProvider(app, GENAI_TYPE);
 
-  const identifier = createInstanceIdentifier(
-    Backend.VERTEX_AI,
-    options?.location
-  );
-  return vertexProvider.getImmediate({
+  const identifier = encodeInstanceIdentifier({
+    backendType: BackendType.VERTEX_AI,
+    location: options?.location ?? ""
+  });
+  return genAIProvider.getImmediate({
     identifier
   });
 }
@@ -75,19 +77,39 @@ export function getVertexAI(
  *
  * @param app - The {@link @firebase/app#FirebaseApp} to use.
  */
-export function getDeveloperAPI(
+export function getGenAI(
   app: FirebaseApp = getApp(),
-): VertexAI {
+  options: GenAIOptions = { backend: googleAI() }
+): GenAI {
   app = getModularInstance(app);
   // Dependencies
-  const vertexProvider: Provider<'vertexAI'> = _getProvider(app, VERTEX_TYPE);
+  const genAIProvider: Provider<'genAI'> = _getProvider(app, GENAI_TYPE);
 
-  const identifier = createInstanceIdentifier(
-    Backend.GEMINI_DEVELOPER_API,
+  const identifier = encodeInstanceIdentifier(
+    options.backend
   );
-  return vertexProvider.getImmediate({
+  return genAIProvider.getImmediate({
     identifier
   });
+}
+
+// FIXME: find a new name for this. it may collide with a very commonly used variable name
+export function googleAI(): GoogleAIBackend {
+  const backend: GoogleAIBackend = {
+    backendType: BackendType.GOOGLE_AI
+  };
+
+  return backend;
+}
+
+// FIXME: find a new name for this. it may collide with a very commonly used variable name
+export function vertexAI(location?: string): VertexAIBackend {
+  const backend: VertexAIBackend = {
+    backendType: BackendType.VERTEX_AI,
+    location: location ?? DEFAULT_LOCATION
+  };
+  
+  return backend;
 }
 
 /**
@@ -97,17 +119,17 @@ export function getDeveloperAPI(
  * @public
  */
 export function getGenerativeModel(
-  vertexAI: VertexAI,
+  genAI: GenAI,
   modelParams: ModelParams,
   requestOptions?: RequestOptions
 ): GenerativeModel {
   if (!modelParams.model) {
-    throw new VertexAIError(
-      VertexAIErrorCode.NO_MODEL,
+    throw new GenAIError(
+      GenAIErrorCode.NO_MODEL,
       `Must provide a model name. Example: getGenerativeModel({ model: 'my-model-name' })`
     );
   }
-  return new GenerativeModel(vertexAI, modelParams, requestOptions);
+  return new GenerativeModel(genAI, modelParams, requestOptions);
 }
 
 /**
@@ -115,7 +137,7 @@ export function getGenerativeModel(
  *
  * Only Imagen 3 models (named `imagen-3.0-*`) are supported.
  *
- * @param vertexAI - An instance of the Vertex AI in Firebase SDK.
+ * @param genAI - An instance of the Vertex AI in Firebase SDK.
  * @param modelParams - Parameters to use when making Imagen requests.
  * @param requestOptions - Additional options to use when making requests.
  *
@@ -125,15 +147,15 @@ export function getGenerativeModel(
  * @beta
  */
 export function getImagenModel(
-  vertexAI: VertexAI,
+  genAI: GenAI,
   modelParams: ImagenModelParams,
   requestOptions?: RequestOptions
 ): ImagenModel {
   if (!modelParams.model) {
-    throw new VertexAIError(
-      VertexAIErrorCode.NO_MODEL,
+    throw new GenAIError(
+      GenAIErrorCode.NO_MODEL,
       `Must provide a model name. Example: getImagenModel({ model: 'my-model-name' })`
     );
   }
-  return new ImagenModel(vertexAI, modelParams, requestOptions);
+  return new ImagenModel(genAI, modelParams, requestOptions);
 }

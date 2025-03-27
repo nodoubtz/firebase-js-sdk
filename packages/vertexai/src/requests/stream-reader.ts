@@ -21,9 +21,9 @@ import {
   GenerateContentResponse,
   GenerateContentStreamResult,
   Part,
-  VertexAIErrorCode
+  GenAIErrorCode
 } from '../types';
-import { VertexAIError } from '../errors';
+import { GenAIError } from '../errors';
 import { createEnhancedContentResponse } from './response-helpers';
 import * as DeveloperAPIMapper from '../developerAPI';
 import { DeveloperAPIGenerateContentResponse } from '../types/developerAPI';
@@ -65,7 +65,7 @@ async function getResponsePromise(
     const { done, value } = await reader.read();
     if (done) {
       let generateContentResponse = aggregateResponses(allResponses);
-      if (apiSettings.developerAPIEnabled) {
+      if (apiSettings.backend.backendType === "GOOGLE_AI") {
         generateContentResponse = DeveloperAPIMapper.mapGenerateContentResponse(
           generateContentResponse as DeveloperAPIGenerateContentResponse
         );
@@ -88,7 +88,7 @@ async function* generateResponseSequence(
       break;
     }
 
-    const enhancedResponse = apiSettings.developerAPIEnabled
+    const enhancedResponse = apiSettings.backend.backendType === "GOOGLE_AI"
       ? createEnhancedContentResponse(
           DeveloperAPIMapper.mapGenerateContentResponse(
             value as DeveloperAPIGenerateContentResponse
@@ -117,8 +117,8 @@ export function getResponseStream<T>(
           if (done) {
             if (currentText.trim()) {
               controller.error(
-                new VertexAIError(
-                  VertexAIErrorCode.PARSE_FAILED,
+                new GenAIError(
+                  GenAIErrorCode.PARSE_FAILED,
                   'Failed to parse stream'
                 )
               );
@@ -136,8 +136,8 @@ export function getResponseStream<T>(
               parsedResponse = JSON.parse(match[1]);
             } catch (e) {
               controller.error(
-                new VertexAIError(
-                  VertexAIErrorCode.PARSE_FAILED,
+                new GenAIError(
+                  GenAIErrorCode.PARSE_FAILED,
                   `Error parsing JSON response: "${match[1]}`
                 )
               );
@@ -215,8 +215,8 @@ export function aggregateResponses(
               newPart.functionCall = part.functionCall;
             }
             if (Object.keys(newPart).length === 0) {
-              throw new VertexAIError(
-                VertexAIErrorCode.INVALID_CONTENT,
+              throw new GenAIError(
+                GenAIErrorCode.INVALID_CONTENT,
                 'Part should have at least one property, but there are none. This is likely caused ' +
                   'by a malformed response from the backend.'
               );

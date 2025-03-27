@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-import { ErrorDetails, RequestOptions, VertexAIErrorCode } from '../types';
-import { VertexAIError } from '../errors';
+import { ErrorDetails, RequestOptions, GenAIErrorCode } from '../types';
+import { GenAIError } from '../errors';
 import { ApiSettings } from '../types/internal';
 import {
   DEFAULT_API_VERSION,
@@ -47,7 +47,7 @@ export class RequestUrl {
     // TODO: allow user-set option if that feature becomes available
     const apiVersion = DEFAULT_API_VERSION;
     let url = `${this.getBaseUrl()}/${apiVersion}`;
-    if (this.apiSettings.developerAPIEnabled) {
+    if (this.apiSettings.backend.backendType === "GOOGLE_AI") {
       url += `/${this.model}:${this.task}`;
     } else {
       url += `/projects/${this.apiSettings.project}/locations/${this.apiSettings.location}/${this.model}:${this.task}`;
@@ -59,7 +59,7 @@ export class RequestUrl {
   }
 
   private getBaseUrl(): string {
-    return this.apiSettings.developerAPIEnabled
+    return this.apiSettings.backend.backendType === "GOOGLE_AI"
       ? this.requestOptions?.baseUrl || DEVELOPER_API_BASE_URL
       : this.requestOptions?.baseUrl || DEFAULT_BASE_URL;
   }
@@ -188,8 +188,8 @@ export async function makeRequest(
           )
         )
       ) {
-        throw new VertexAIError(
-          VertexAIErrorCode.API_NOT_ENABLED,
+        throw new GenAIError(
+          GenAIErrorCode.API_NOT_ENABLED,
           `The Vertex AI in Firebase SDK requires the Vertex AI in Firebase ` +
             `API ('firebasevertexai.googleapis.com') to be enabled in your ` +
             `Firebase project. Enable this API by visiting the Firebase Console ` +
@@ -204,8 +204,8 @@ export async function makeRequest(
           }
         );
       }
-      throw new VertexAIError(
-        VertexAIErrorCode.FETCH_ERROR,
+      throw new GenAIError(
+        GenAIErrorCode.FETCH_ERROR,
         `Error fetching from ${url}: [${response.status} ${response.statusText}] ${message}`,
         {
           status: response.status,
@@ -217,12 +217,12 @@ export async function makeRequest(
   } catch (e) {
     let err = e as Error;
     if (
-      (e as VertexAIError).code !== VertexAIErrorCode.FETCH_ERROR &&
-      (e as VertexAIError).code !== VertexAIErrorCode.API_NOT_ENABLED &&
+      (e as GenAIError).code !== GenAIErrorCode.FETCH_ERROR &&
+      (e as GenAIError).code !== GenAIErrorCode.API_NOT_ENABLED &&
       e instanceof Error
     ) {
-      err = new VertexAIError(
-        VertexAIErrorCode.ERROR,
+      err = new GenAIError(
+        GenAIErrorCode.ERROR,
         `Error fetching from ${url.toString()}: ${e.message}`
       );
       err.stack = e.stack;

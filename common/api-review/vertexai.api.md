@@ -19,13 +19,16 @@ export class ArraySchema extends Schema {
 }
 
 // @public (undocumented)
-export const Backend: {
-    VERTEX_AI: string;
-    GEMINI_DEVELOPER_API: string;
+export type Backend = GoogleAIBackend | VertexAIBackend;
+
+// @public (undocumented)
+export const BackendType: {
+    readonly VERTEX_AI: "VERTEX_AI";
+    readonly GOOGLE_AI: "GOOGLE_AI";
 };
 
 // @public (undocumented)
-export type Backend = typeof Backend[keyof typeof Backend];
+export type BackendType = typeof BackendType[keyof typeof BackendType];
 
 // @public
 export interface BaseParams {
@@ -249,6 +252,50 @@ export interface FunctionResponsePart {
 }
 
 // @public
+export interface GenAI {
+    app: FirebaseApp;
+    // (undocumented)
+    backend: Backend;
+    // @deprecated (undocumented)
+    location: string;
+}
+
+// @public
+class GenAIError extends FirebaseError {
+    constructor(code: GenAIErrorCode, message: string, customErrorData?: CustomErrorData | undefined);
+    // (undocumented)
+    readonly code: GenAIErrorCode;
+    // (undocumented)
+    readonly customErrorData?: CustomErrorData | undefined;
+}
+
+export { GenAIError }
+
+export { GenAIError as VertexAIError }
+
+// @public
+export const enum GenAIErrorCode {
+    API_NOT_ENABLED = "api-not-enabled",
+    ERROR = "error",
+    FETCH_ERROR = "fetch-error",
+    INVALID_CONTENT = "invalid-content",
+    INVALID_SCHEMA = "invalid-schema",
+    NO_API_KEY = "no-api-key",
+    NO_MODEL = "no-model",
+    NO_PROJECT_ID = "no-project-id",
+    PARSE_FAILED = "parse-failed",
+    REQUEST_ERROR = "request-error",
+    RESPONSE_ERROR = "response-error",
+    UNSUPPORTED = "unsupported"
+}
+
+// @public (undocumented)
+export interface GenAIOptions {
+    // (undocumented)
+    backend: Backend;
+}
+
+// @public
 export interface GenerateContentCandidate {
     // (undocumented)
     citationMetadata?: CitationMetadata;
@@ -333,7 +380,7 @@ export interface GenerativeContentBlob {
 
 // @public
 export class GenerativeModel extends VertexAIModel {
-    constructor(vertexAI: VertexAI, modelParams: ModelParams, requestOptions?: RequestOptions);
+    constructor(genAI: GenAI, modelParams: ModelParams, requestOptions?: RequestOptions);
     countTokens(request: CountTokensRequest | string | Array<string | Part>): Promise<CountTokensResponse>;
     generateContent(request: GenerateContentRequest | string | Array<string | Part>): Promise<GenerateContentResult>;
     generateContentStream(request: GenerateContentRequest | string | Array<string | Part>): Promise<GenerateContentStreamResult>;
@@ -353,16 +400,24 @@ export class GenerativeModel extends VertexAIModel {
 }
 
 // @public
-export function getDeveloperAPI(app?: FirebaseApp): VertexAI;
+export function getGenAI(app?: FirebaseApp, options?: GenAIOptions): GenAI;
 
 // @public
-export function getGenerativeModel(vertexAI: VertexAI, modelParams: ModelParams, requestOptions?: RequestOptions): GenerativeModel;
+export function getGenerativeModel(genAI: GenAI, modelParams: ModelParams, requestOptions?: RequestOptions): GenerativeModel;
 
 // @beta
-export function getImagenModel(vertexAI: VertexAI, modelParams: ImagenModelParams, requestOptions?: RequestOptions): ImagenModel;
+export function getImagenModel(genAI: GenAI, modelParams: ImagenModelParams, requestOptions?: RequestOptions): ImagenModel;
 
-// @public
+// @public @deprecated
 export function getVertexAI(app?: FirebaseApp, options?: VertexAIOptions): VertexAI;
+
+// @public (undocumented)
+export function googleAI(): GoogleAIBackend;
+
+// @public (undocumented)
+export type GoogleAIBackend = {
+    backendType: "GOOGLE_AI";
+};
 
 // @public (undocumented)
 export interface GroundingAttribution {
@@ -527,12 +582,7 @@ export interface InlineDataPart {
 }
 
 // @public (undocumented)
-export interface InstanceIdentifier {
-    // (undocumented)
-    backend: Backend;
-    // (undocumented)
-    location?: string;
-}
+export type InstanceIdentifier = Backend;
 
 // @public
 export class IntegerSchema extends Schema {
@@ -798,52 +848,33 @@ export interface UsageMetadata {
     totalTokenCount: number;
 }
 
-// @public
-export interface VertexAI {
-    app: FirebaseApp;
-    // (undocumented)
-    backend: Backend;
-    // (undocumented)
+// @public @deprecated (undocumented)
+export type VertexAI = GenAI;
+
+// @public (undocumented)
+export function vertexAI(location?: string): VertexAIBackend;
+
+// @public (undocumented)
+export type VertexAIBackend = {
+    backendType: "VERTEX_AI";
     location: string;
-}
+};
 
-// @public
-export class VertexAIError extends FirebaseError {
-    constructor(code: VertexAIErrorCode, message: string, customErrorData?: CustomErrorData | undefined);
-    // (undocumented)
-    readonly code: VertexAIErrorCode;
-    // (undocumented)
-    readonly customErrorData?: CustomErrorData | undefined;
-}
-
-// @public
-export const enum VertexAIErrorCode {
-    API_NOT_ENABLED = "api-not-enabled",
-    ERROR = "error",
-    FETCH_ERROR = "fetch-error",
-    INVALID_CONTENT = "invalid-content",
-    INVALID_SCHEMA = "invalid-schema",
-    NO_API_KEY = "no-api-key",
-    NO_MODEL = "no-model",
-    NO_PROJECT_ID = "no-project-id",
-    PARSE_FAILED = "parse-failed",
-    REQUEST_ERROR = "request-error",
-    RESPONSE_ERROR = "response-error",
-    UNSUPPORTED = "unsupported"
-}
+// @public @deprecated (undocumented)
+export type VertexAIErrorCode = GenAIErrorCode;
 
 // @public
 export abstract class VertexAIModel {
     // @internal
-    protected constructor(vertexAI: VertexAI, modelName: string);
+    protected constructor(genAI: GenAI, modelName: string);
     // @internal (undocumented)
     protected _apiSettings: ApiSettings;
     readonly model: string;
     // @internal (undocumented)
-    static normalizeModelName(modelName: string, developerAPIEnabled?: boolean): string;
+    static normalizeModelName(modelName: string, backendType: BackendType): string;
     }
 
-// @public
+// @public @deprecated (undocumented)
 export interface VertexAIOptions {
     // (undocumented)
     location?: string;

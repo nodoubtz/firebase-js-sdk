@@ -16,48 +16,46 @@
  */
 
 import { DEFAULT_LOCATION } from './constants';
-import { VertexAIError } from './errors';
-import { Backend, InstanceIdentifier } from './public-types';
-import { VertexAIErrorCode } from './types';
+import { GenAIError } from './errors';
+import { BackendType, InstanceIdentifier } from './public-types';
+import { GenAIErrorCode } from './types';
 
 /**
  * @internal
  */
-export function createInstanceIdentifier(
-  backend: Backend,
-  location?: string
+export function encodeInstanceIdentifier(
+  instanceIdentifier: InstanceIdentifier,
 ): string {
-  switch(backend) {
-    case Backend.VERTEX_AI:
-      return `vertexAI/${location || DEFAULT_LOCATION}`;
-    case Backend.GEMINI_DEVELOPER_API:
-      return 'developerAPI'
+  switch(instanceIdentifier.backendType) {
+    case BackendType.VERTEX_AI:
+      return `genai/vertexai/${location || DEFAULT_LOCATION}`;
+    case BackendType.GOOGLE_AI:
+      return 'genai/googleai'
     default:
-      throw new VertexAIError(VertexAIErrorCode.ERROR, `An internal error occured: Unknown Backend ${backend}. Please submit an issue at https://github.com/firebase/firebase-js-sdk.`)
+      throw new GenAIError(GenAIErrorCode.ERROR, `An internal error occured: Unknown Backend ${instanceIdentifier}. Please submit an issue at https://github.com/firebase/firebase-js-sdk.`)
   }
 }
 
 /**
  * @internal
  */
-export function parseInstanceIdentifier(instanceIdentifier: string): InstanceIdentifier {
+export function decodeInstanceIdentifier(instanceIdentifier: string): InstanceIdentifier {
   const identifierParts = instanceIdentifier.split('/');
-  const backend = identifierParts[0];
+  const backend = identifierParts[1];
   switch (backend) {
-    case Backend.VERTEX_AI:
+    case 'vertexai':
       const location: string | undefined = identifierParts[1]; // The location may not be a part of the instance identifier
       return {
-        backend,
+        backendType: BackendType.VERTEX_AI,
         location
       };
-    case Backend.GEMINI_DEVELOPER_API:
+    case 'googleai':
       return {
-        backend,
-        location: undefined
+        backendType: BackendType.GOOGLE_AI,
       };
     default:
-      throw new VertexAIError(
-        VertexAIErrorCode.ERROR,
+      throw new GenAIError(
+        GenAIErrorCode.ERROR,
         `An internal error occured: Invalid instance identifier: ${instanceIdentifier}. Please submit an issue at https://github.com/firebase/firebase-js-sdk`
       );
   }

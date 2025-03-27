@@ -31,7 +31,7 @@ export async function countTokens(
   requestOptions?: RequestOptions
 ): Promise<CountTokensResponse> {
   let body: string = '';
-  if (apiSettings.developerAPIEnabled) {
+  if (apiSettings.backend.backendType === "GOOGLE_AI") {
     const mappedParams = DeveloperAPIMapper.mapCountTokensRequest(params, model);
     body = JSON.stringify(mappedParams);
   } else {

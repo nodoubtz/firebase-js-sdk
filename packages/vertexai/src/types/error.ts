@@ -58,11 +58,11 @@ export interface CustomErrorData {
 }
 
 /**
- * Standardized error codes that <code>{@link VertexAIError}</code> can have.
+ * Standardized error codes that <code>{@link GenAIError}</code> can have.
  *
  * @public
  */
-export const enum VertexAIErrorCode {
+export const enum GenAIErrorCode {
   /** A generic error occurred. */
   ERROR = 'error',
 
@@ -99,3 +99,8 @@ export const enum VertexAIErrorCode {
   /** An error occured due an attempt to use an unsupported feature. */
   UNSUPPORTED = 'unsupported'
 }
+
+/**
+ * @deprecated
+ */
+export type VertexAIErrorCode = GenAIErrorCode;

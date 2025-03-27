@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { VertexAIError } from './errors';
+import { GenAIError } from './errors';
 import { logger } from './logger';
 import {
   CitationMetadata,
@@ -27,7 +27,7 @@ import {
   InlineDataPart,
   PromptFeedback,
   SafetyRating,
-  VertexAIErrorCode
+  GenAIErrorCode
 } from './types';
 import {
   DeveloperAPIGenerateContentResponse,
@@ -60,8 +60,8 @@ export function mapGenerateContentRequest(
 ): GenerateContentRequest {
   generateContentRequest.safetySettings?.forEach(safetySetting => {
     if (safetySetting.method) {
-      throw new VertexAIError(
-        VertexAIErrorCode.UNSUPPORTED,
+      throw new GenAIError(
+        GenAIErrorCode.UNSUPPORTED,
         'SafetySetting.method is not supported in the Developer API. Please remove this property.'
       );
     }
@@ -159,8 +159,8 @@ export function mapGenerateContentCandidates(
           part => (part as InlineDataPart)?.videoMetadata
         )
       ) {
-        throw new VertexAIError(
-          VertexAIErrorCode.UNSUPPORTED,
+        throw new GenAIError(
+          GenAIErrorCode.UNSUPPORTED,
           'Part.videoMetadata is not supported in the Developer API. Please remove this property.'
         );
       }
