@@ -412,12 +412,12 @@ export function getImagenModel(genAI: GenAI, modelParams: ImagenModelParams, req
 export function getVertexAI(app?: FirebaseApp, options?: VertexAIOptions): VertexAI;
 
 // @public (undocumented)
-export function googleAI(): GoogleAIBackend;
+export type GoogleAIBackend = {
+    backendType: typeof BackendType.GOOGLE_AI;
+};
 
 // @public (undocumented)
-export type GoogleAIBackend = {
-    backendType: "GOOGLE_AI";
-};
+export function googleAIBackend(): GoogleAIBackend;
 
 // @public (undocumented)
 export interface GroundingAttribution {
@@ -852,13 +852,13 @@ export interface UsageMetadata {
 export type VertexAI = GenAI;
 
 // @public (undocumented)
-export function vertexAI(location?: string): VertexAIBackend;
-
-// @public (undocumented)
 export type VertexAIBackend = {
-    backendType: "VERTEX_AI";
+    backendType: typeof BackendType.VERTEX_AI;
     location: string;
 };
+
+// @public (undocumented)
+export function vertexAIBackend(location?: string): VertexAIBackend;
 
 // @public @deprecated (undocumented)
 export type VertexAIErrorCode = GenAIErrorCode;

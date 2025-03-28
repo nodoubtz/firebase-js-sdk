@@ -21,14 +21,9 @@ export * from './types';
 
 export type InstanceIdentifier = Backend;
 
-/**
- * @deprecated This is here to maintain backwards-compatibility. Use `GenAI` instead.
- */
 export type VertexAI = GenAI;
 
 /**
- * @deprecated
- * 
  * Options when initializing the Vertex AI in Firebase SDK.
  * @public
  */

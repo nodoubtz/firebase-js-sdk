@@ -9,28 +9,23 @@ overwritten. Changes should be made in the source code at
 https://github.com/firebase/firebase-js-sdk
 {% endcomment %}
 
-# VertexAIOptions interface
-> Warning: This API is now obsolete.
-> 
-> Options when initializing the Vertex AI in Firebase SDK.
-> 
-
+# GenAIOptions interface
 <b>Signature:</b>
 
 ```typescript
-export interface VertexAIOptions 
+export interface GenAIOptions 
 ```
 
 ## Properties
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [location](./vertexai.vertexaioptions.md#vertexaioptionslocation) | string |  |
+|  [backend](./vertexai.genaioptions.md#genaioptionsbackend) | [Backend](./vertexai.md#backend) |  |
 
-## VertexAIOptions.location
+## GenAIOptions.backend
 
 <b>Signature:</b>
 
 ```typescript
-location?: string;
+backend: Backend;
 ```

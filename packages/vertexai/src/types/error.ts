@@ -100,7 +100,4 @@ export const enum GenAIErrorCode {
   UNSUPPORTED = 'unsupported'
 }
 
-/**
- * @deprecated
- */
 export type VertexAIErrorCode = GenAIErrorCode;

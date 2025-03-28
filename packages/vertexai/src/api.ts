@@ -48,8 +48,6 @@ declare module '@firebase/component' {
  *
  * @public
  * 
- * @deprecated Use {@link getGenAI} instead. For example: `getGenAI(app, { backend: vertexAI() })`.
- *
  * @param app - The {@link @firebase/app#FirebaseApp} to use.
  */
 export function getVertexAI(
@@ -79,7 +77,7 @@ export function getVertexAI(
  */
 export function getGenAI(
   app: FirebaseApp = getApp(),
-  options: GenAIOptions = { backend: googleAI() }
+  options: GenAIOptions = { backend: googleAIBackend() }
 ): GenAI {
   app = getModularInstance(app);
   // Dependencies
@@ -94,7 +92,7 @@ export function getGenAI(
 }
 
 // FIXME: find a new name for this. it may collide with a very commonly used variable name
-export function googleAI(): GoogleAIBackend {
+export function googleAIBackend(): GoogleAIBackend {
   const backend: GoogleAIBackend = {
     backendType: BackendType.GOOGLE_AI
   };
@@ -103,7 +101,7 @@ export function googleAI(): GoogleAIBackend {
 }
 
 // FIXME: find a new name for this. it may collide with a very commonly used variable name
-export function vertexAI(location?: string): VertexAIBackend {
+export function vertexAIBackend(location?: string): VertexAIBackend {
   const backend: VertexAIBackend = {
     backendType: BackendType.VERTEX_AI,
     location: location ?? DEFAULT_LOCATION
