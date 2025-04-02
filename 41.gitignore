@@ -1,0 +1,52 @@
+# Ignore sensitive files
+.env
+*.key
+*.pem
+*.cert
+
+# Ignore credential files
+config/secrets.yml
+config/database.yml
+config/credentials.yml.enc
+config/master.key
+
+# Ignore log files
+*.log
+log/*
+tmp/*
+!log/.keep
+
+# Ignore node_modules
+node_modules/
+
+# Ignore Python virtual environment
+venv/
+__pycache__/
+
+# Ignore build directories
+dist/
+build/
+
+# Ignore coverage reports
+coverage/
+*.lcov
+
+# Ignore dependency directories
+vendor/
+.bundle/
+
+# Ignore compiled files
+*.class
+*.o
+*.so
+*.dll
+
+# Ignore IDE and editor settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Ignore OS-generated files
+.DS_Store
+Thumbs.db
