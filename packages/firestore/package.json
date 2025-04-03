@@ -98,7 +98,7 @@
     "@firebase/logger": "0.4.4",
     "@firebase/util": "1.11.0",
     "@firebase/webchannel-wrapper": "1.0.3",
-    "@grpc/grpc-js": "~1.9.0",
+    "@grpc/grpc-js": "~1.13.2",
     "@grpc/proto-loader": "^0.7.8",
     "tslib": "^2.1.0"
   },
@@ -115,7 +115,7 @@
     "chai-exclude": "2.1.1",
     "json-stable-stringify": "1.2.1",
     "protobufjs": "7.4.0",
-    "rollup": "2.79.2",
+    "rollup": "4.39.0",
     "rollup-plugin-copy": "3.5.0",
     "rollup-plugin-copy-assets": "2.0.3",
     "rollup-plugin-replace": "2.2.0",
