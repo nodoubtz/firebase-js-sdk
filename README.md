@@ -1,3 +1,5 @@
+[![Check Vertex AI Responses](https://github.com/nodoubtz/firebase-js-sdk/actions/workflows/check-vertexai-responses.yml/badge.svg?branch=nodoubtz-patch-2)](https://github.com/nodoubtz/firebase-js-sdk/actions/workflows/check-vertexai-responses.yml)
+
 The README file for the `nodoubtz/firebase-js-sdk` repository is already quite comprehensive. Here is the updated README with some minor improvements for better clarity and structure:
 
 ````markdown
